@@ -5,8 +5,19 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:client": "cd packages/client && bun run dev",
-    "dev:server": "cd packages/server && bun run dev",
-    "dev": "bun --watch run dev:server & bun run dev:client"
+    "client": "bun --cwd packages/client dev",
+    "server": "bun --cwd packages/server dev",
+    "dev": "bun run --parallel \"bun run client\" \"bun run server\""
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.3.0",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.180.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13"
   }
 }
