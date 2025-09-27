@@ -24,7 +24,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["../shared/src/*"]
-    }
+    },
+
+    "baseUrl": ".",
   },
   "include": ["src"],
   "references": [{ "path": "../shared" }]

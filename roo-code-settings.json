@@ -1,0 +1,15 @@
+{
+  "experimentalFeatures": {
+    "enableGitHubCopilotConnection": true
+  },
+  "providers": {
+    "githubCopilot": {
+      "models": {
+        "claude": {
+          "modelId": "claude-3-7-sonnet-20250219",
+          "priority": 1
+        }
+      }
+    }
+  }
+}
