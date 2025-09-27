@@ -5,7 +5,7 @@ import type { GameEvent } from '@shared/index';
 
 function App() {
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080');
+    const ws = new WebSocket('ws://localhost:8081');
 
     ws.onopen = () => {
       console.log('Connected to server');

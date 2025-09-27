@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { GameEvent } from '@shared/index';
 
-const wss = new WebSocketServer({ port: 8080 });
+const wss = new WebSocketServer({ port: 8081 });
 
 wss.on('connection', function connection(ws: WebSocket) {
   console.log('Client connected');
@@ -18,4 +18,4 @@ wss.on('connection', function connection(ws: WebSocket) {
   });
 });
 
-console.log('WebSocket server started on port 8080');
+console.log('WebSocket server started on port 8081');
