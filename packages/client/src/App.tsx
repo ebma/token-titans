@@ -1,46 +1,47 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Box } from '@react-three/drei'
-import { useEffect } from 'react';
-import type { GameEvent } from '@shared/index';
+import { useEffect, useState } from 'react';
+import type { AppEvent, AuthResponseEvent } from '@shared/index';
+import { useAuthStore } from './hooks/useAuthStore';
+import { LoginForm } from './components/auth/LoginForm';
+import { Lobby } from './components/lobby/Lobby';
 
 function App() {
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const { session, setSession } = useAuthStore();
+
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8081');
+    const socket = new WebSocket('ws://localhost:8081');
+    setWs(socket);
 
-    ws.onopen = () => {
+    socket.onopen = () => {
       console.log('Connected to server');
-      const event: GameEvent = {
-        type: 'playerMove',
-        payload: { x: 1, y: 2, z: 3 }
-      };
-      ws.send(JSON.stringify(event));
     };
 
-    ws.onmessage = (event) => {
-      const receivedEvent: GameEvent = JSON.parse(event.data);
-      console.log('Message from server ', receivedEvent.type);
+    socket.onmessage = (event) => {
+      const receivedEvent: AppEvent = JSON.parse(event.data);
+      
+      if (receivedEvent.type === 'authResponse') {
+        setSession((receivedEvent as AuthResponseEvent).payload);
+      } else {
+        console.log('Message from server ', receivedEvent.type);
+      }
     };
 
-    ws.onclose = () => {
+    socket.onclose = () => {
       console.log('Disconnected from server');
     };
 
     return () => {
-      ws.close();
+      socket.close();
     };
-  }, []);
+  }, [setSession]);
 
-  return (
-    <div style={{ height: '100vh', width: '100vw' }}>
-      <Canvas>
-        <ambientLight />
-        <pointLight position={[10, 10, 10]} />
-        <Box position={[-1.2, 0, 0]} />
-        <Box position={[1.2, 0, 0]} />
-        <OrbitControls />
-      </Canvas>
-    </div>
-  )
+  if (!session) {
+    return <LoginForm ws={ws} />;
+  }
+
+  return <Lobby />;
 }
 
 export default App
