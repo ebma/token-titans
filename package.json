@@ -5,9 +5,9 @@
     "packages/*"
   ],
   "scripts": {
-    "client": "bun --cwd packages/client dev",
-    "server": "bun --cwd packages/server dev",
-    "dev": "bun run --parallel \"bun run client\" \"bun run server\""
+    "client": "bun --cwd packages/client run dev",
+    "server": "bun --cwd packages/server run dev",
+    "dev": "bash -lc \"(cd \"packages/server\" && bun run dev &) && (cd \"packages/client\" && bun run dev)\""
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",

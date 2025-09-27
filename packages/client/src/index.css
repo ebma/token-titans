@@ -68,9 +68,10 @@
  
 @layer base {
   * {
-    @apply border-border;
+    border-color: rgb(var(--border) / 1);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: rgb(var(--background) / 1);
+    color: rgb(var(--foreground) / 1);
   }
 }

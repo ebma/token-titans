@@ -17,6 +17,15 @@ module.exports = {
       },
     },
     extend: {
+      colors: {
+        border: 'rgb(var(--border) / <alpha-value>)',
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        card: 'rgb(var(--card) / <alpha-value>)',
+        'card-foreground': 'rgb(var(--card-foreground) / <alpha-value>)',
+        primary: 'rgb(var(--primary) / <alpha-value>)',
+        'primary-foreground': 'rgb(var(--primary-foreground) / <alpha-value>)',
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
