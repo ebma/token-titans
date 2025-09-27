@@ -1,0 +1,12 @@
+{
+  "name": "games-collection-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:client": "cd packages/client && bun run dev",
+    "dev:server": "cd packages/server && bun run dev",
+    "dev": "bun --watch run dev:server & bun run dev:client"
+  }
+}
