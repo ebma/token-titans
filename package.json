@@ -21,6 +21,7 @@
     "format": "biome check --write --unsafe --no-errors-on-unmatched",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
+    "prepare": "husky",
     "server": "bun --cwd packages/server run dev"
   },
   "verify": "biome check --no-errors-on-unmatched",
