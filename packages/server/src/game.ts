@@ -1,10 +1,26 @@
-import type { Game, GameAction } from "@shared/index";
+import type { Game, GameAction, Titan } from "@shared/index";
 import { randomUUID } from "crypto";
 
+/**
+ * GameManager now tracks per-game ephemeral state:
+ * - roundActions: map gameId -> (playerId -> GameAction)
+ * - titanHPs: map gameId -> (titanId -> currentHP)
+ * - titanCharges: map gameId -> (titanId -> currentCharge 0-100)
+ * - gameTitans: map gameId -> (titanId -> Titan) for access to stats
+ *
+ * The Game object stored in memory will be augmented at runtime with a `meta` field
+ * containing titanHPs and titanCharges so handlers can broadcast it to clients.
+ */
 export class GameManager {
   private games: Map<string, Game> = new Map();
   // Track current active titan per player (playerId -> titanId)
   private activeTitans: Map<string, string> = new Map();
+
+  // Per-game bookkeeping:
+  private roundActions: Map<string, Record<string, GameAction>> = new Map();
+  private titanHPs: Map<string, Record<string, number>> = new Map();
+  private titanCharges: Map<string, Record<string, number>> = new Map();
+  private gameTitans: Map<string, Record<string, Titan>> = new Map();
 
   // Set a player's active titan
   setActiveTitan(playerId: string, titanId: string): void {
@@ -28,8 +44,12 @@ export class GameManager {
     return result;
   }
 
-  // Accept optional activeTitans mapping; if omitted, populate from internal tracking
-  createGame(players: { id: string; username: string }[], activeTitans?: Record<string, string>): Game {
+  /**
+   * Create a new game.
+   * Optionally accept a list of Titan objects for the titans participating in the game
+   * so that per-game HP and charge can be initialized from Titan.stats.HP.
+   */
+  createGame(players: { id: string; username: string }[], activeTitans?: Record<string, string>, titans?: Titan[]): Game {
     // Use provided mapping when available, otherwise use stored active titans for these players
     const titansMapping = activeTitans ?? this.getActiveTitansForPlayers(players.map(p => p.id));
 
@@ -41,25 +61,213 @@ export class GameManager {
       titans: titansMapping
     };
 
+    // Initialize per-game titan data if Titan objects were provided
+    const titanHPRecord: Record<string, number> = {};
+    const titanChargeRecord: Record<string, number> = {};
+    const titanRecord: Record<string, Titan> = {};
+
+    if (titans && titans.length > 0) {
+      for (const t of titans) {
+        titanHPRecord[t.id] = t.stats.HP;
+        titanChargeRecord[t.id] = 0;
+        titanRecord[t.id] = t;
+      }
+    } else {
+      // If no titan objects provided, default to 0/empty; handler may call initGameMeta later.
+      for (const tid of Object.values(game.titans || {})) {
+        titanHPRecord[tid] = 0;
+        titanChargeRecord[tid] = 0;
+      }
+    }
+
+    this.titanHPs.set(game.id, titanHPRecord);
+    this.titanCharges.set(game.id, titanChargeRecord);
+    this.gameTitans.set(game.id, titanRecord);
+    this.roundActions.set(game.id, {});
+
+    // Attach lightweight ephemeral meta to the stored Game object for broadcasting.
+    (game as any).meta = {
+      titanCharges: { ...titanChargeRecord },
+      titanHPs: { ...titanHPRecord }
+    };
+
     this.games.set(game.id, game);
     return game;
+  }
+
+  /**
+   * If titans become available after createGame, this can initialize per-game titan data.
+   */
+  initGameMeta(gameId: string, titans: Titan[]) {
+    const game = this.getGame(gameId);
+    if (!game) return;
+
+    const titanHPRecord: Record<string, number> = {};
+    const titanChargeRecord: Record<string, number> = {};
+    const titanRecord: Record<string, Titan> = {};
+
+    for (const t of titans) {
+      titanHPRecord[t.id] = t.stats.HP;
+      titanChargeRecord[t.id] = 0;
+      titanRecord[t.id] = t;
+    }
+
+    this.titanHPs.set(gameId, titanHPRecord);
+    this.titanCharges.set(gameId, titanChargeRecord);
+    this.gameTitans.set(gameId, titanRecord);
+    this.roundActions.set(gameId, {});
+
+    (game as any).meta = {
+      titanCharges: { ...titanChargeRecord },
+      titanHPs: { ...titanHPRecord }
+    };
+
+    this.games.set(game.id, game);
   }
 
   getGame(gameId: string): Game | undefined {
     return this.games.get(gameId);
   }
 
+  /**
+   * Handle a player's action:
+   * - validate game and player
+   * - validate SpecialAbility availability (charge==100), otherwise ignore the action
+   * - store action for the round; when both players acted, resolve simultaneously
+   */
   handlePlayerAction(gameId: string, playerId: string, action: GameAction): Game | undefined {
     const game = this.getGame(gameId);
     if (!game) {
       return;
     }
 
+    if (!game.players.includes(playerId)) {
+      return game;
+    }
+
     console.log(`Player ${playerId} in game ${gameId} used action: ${action.type}`);
 
-    // In a future step, this method would modify the game state.
-    // For now, we just return the current state.
-    return game;
+    // Ensure per-game data exists
+    if (!this.titanCharges.has(gameId) || !this.titanHPs.has(gameId)) {
+      // No per-game meta initialized; nothing to process
+      return game;
+    }
+
+    const titanId = game.titans[playerId];
+    const charges = this.titanCharges.get(gameId)!;
+    const currentCharge = charges[titanId] ?? 0;
+
+    // Validate SpecialAbility usage
+    if (action.type === "SpecialAbility" && currentCharge < 100) {
+      // Ignore the player's choice, return current game state (so clients receive updated info)
+      return game;
+    }
+
+    // Store action for the round
+    const actions = this.roundActions.get(gameId) ?? {};
+    actions[playerId] = action;
+    this.roundActions.set(gameId, actions);
+
+    // If all players have submitted actions, resolve simultaneously
+    const allPlayersActed = game.players.every(pId => actions[pId] !== undefined);
+    if (allPlayersActed) {
+      this.resolveRound(game.id);
+    }
+
+    // Return updated game object (it may have been augmented)
+    return this.getGame(gameId);
+  }
+
+  private resolveRound(gameId: string) {
+    const game = this.getGame(gameId);
+    if (!game) return;
+
+    const actions = this.roundActions.get(gameId) ?? {};
+    const titansForGame = this.gameTitans.get(gameId) ?? {};
+    const hpRecord = { ...(this.titanHPs.get(gameId) ?? {}) };
+    const chargeRecord = { ...(this.titanCharges.get(gameId) ?? {}) };
+
+    // We'll compute damage to apply to each defender based on starting state (simultaneous)
+    const damageToApply: Record<string, number> = {};
+    for (const p of game.players) damageToApply[p] = 0;
+
+    // Helper to get titan id and titan object for a player
+    const getTitanId = (playerId: string) => game.titans[playerId];
+    const getTitanObj = (titanId: string) => titansForGame[titanId];
+
+    // First pass: evaluate actions to compute damage and immediate charge changes (like Rest and Special)
+    for (const attacker of game.players) {
+      const defender = game.players.find(p => p !== attacker)!;
+      const act = actions[attacker];
+      if (!act) continue;
+
+      const attackerTitanId = getTitanId(attacker);
+      const defenderTitanId = getTitanId(defender);
+      const attackerTitan = getTitanObj(attackerTitanId);
+      const defenderTitan = getTitanObj(defenderTitanId);
+
+      // Ensure records exist
+      if (!(attackerTitanId in hpRecord)) hpRecord[attackerTitanId] = attackerTitan?.stats.HP ?? 0;
+      if (!(defenderTitanId in hpRecord)) hpRecord[defenderTitanId] = defenderTitan?.stats.HP ?? 0;
+      if (!(attackerTitanId in chargeRecord)) chargeRecord[attackerTitanId] = 0;
+      if (!(defenderTitanId in chargeRecord)) chargeRecord[defenderTitanId] = 0;
+
+      const defenderAction = actions[defender];
+
+      if (act.type === "Attack") {
+        // random in [0,1)
+        const rand = Math.random();
+        const attackValue = (attackerTitan?.stats.Attack ?? 0) * (1 + rand);
+        const defenderBaseDef = defenderTitan?.stats.Defense ?? 0;
+        const effectiveDef = defenderAction?.type === "Defend" ? defenderBaseDef * 1.5 : defenderBaseDef;
+        const damage = Math.max(0, attackValue - effectiveDef);
+        damageToApply[defender] += damage;
+
+        // If defender defended this attack, it charges +25 (cap later)
+        if (defenderAction?.type === "Defend") {
+          chargeRecord[defenderTitanId] = Math.min(100, (chargeRecord[defenderTitanId] ?? 0) + 25);
+        }
+      } else if (act.type === "SpecialAbility") {
+        // Only reachable when charge was validated earlier
+        const damage = (attackerTitan?.stats.Attack ?? 0) * 2;
+        damageToApply[defender] += damage;
+        // reset attacker's charge to 0
+        chargeRecord[attackerTitanId] = 0;
+      } else if (act.type === "Rest") {
+        // Set attacker's special charge to 100 immediately
+        chargeRecord[attackerTitanId] = 100;
+      } else if (act.type === "Defend") {
+        // Defend itself does not deal damage; if opponent attacked it's handled above.
+        // Nothing else to do here.
+      }
+    }
+
+    // Second pass: apply computed damages to defenders' HP
+    for (const player of game.players) {
+      const titanId = game.titans[player];
+      const before = hpRecord[titanId] ?? 0;
+      const damage = damageToApply[player] ?? 0;
+      const after = Math.max(0, before - damage);
+      hpRecord[titanId] = after;
+    }
+
+    // Ensure charges are bounded between 0 and 100
+    for (const tid of Object.keys(chargeRecord)) {
+      chargeRecord[tid] = Math.max(0, Math.min(100, chargeRecord[tid]));
+    }
+
+    // Store back updated records
+    this.titanHPs.set(gameId, hpRecord);
+    this.titanCharges.set(gameId, chargeRecord);
+
+    // Update ephemeral meta on the game object so handlers can broadcast it
+    (game as any).meta = {
+      titanCharges: { ...chargeRecord },
+      titanHPs: { ...hpRecord }
+    };
+
+    // Clear stored actions for next round
+    this.roundActions.set(gameId, {});
   }
 
   getGameByPlayerId(playerId: string): Game | undefined {

@@ -36,6 +36,16 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const opponentTitan = titans.find(t => t.id === opponentTitanId);
   const statsOrder = ["HP", "Attack", "Defense", "Speed", "Stamina"] as const;
 
+  // Read server-provided ephemeral charge/HP meta (may be absent)
+  const meta =
+    (game as unknown as { meta?: { titanCharges?: Record<string, number>; titanHPs?: Record<string, number> } })?.meta ?? {};
+  const charges: Record<string, number> = meta.titanCharges ?? {};
+  const hpMeta: Record<string, number> = meta.titanHPs ?? {};
+  const playerCharge = playerTitanId ? (charges[playerTitanId] ?? 0) : 0;
+  const opponentCharge = opponentTitanId ? (charges[opponentTitanId] ?? 0) : 0;
+  const playerHP = playerTitanId ? (hpMeta[playerTitanId] ?? playerTitan?.stats.HP ?? "-") : "-";
+  const opponentHP = opponentTitanId ? (hpMeta[opponentTitanId] ?? opponentTitan?.stats.HP ?? "-") : "-";
+
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex-grow">
@@ -77,12 +87,22 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         </Canvas>
       </div>
       <div className="flex justify-center gap-2 p-4">
-        <Button onClick={() => handleAction({ payload: { targetId: "player2" }, type: "Attack" })}>Attack</Button>
-        <Button onClick={() => handleAction({ type: "Defend" })}>Defend</Button>
         <Button
           onClick={() =>
             handleAction({
-              payload: { targetId: "player2" },
+              payload: { targetId: opponentPlayerId ?? "player2" },
+              type: "Attack"
+            })
+          }
+        >
+          Attack
+        </Button>
+        <Button onClick={() => handleAction({ type: "Defend" })}>Defend</Button>
+        <Button
+          disabled={playerCharge < 100}
+          onClick={() =>
+            handleAction({
+              payload: { targetId: opponentPlayerId ?? "player2" },
               type: "SpecialAbility"
             })
           }
@@ -102,13 +122,28 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {statsOrder.map(stat => (
-              <TableRow key={stat as string}>
-                <TableHead>{stat}</TableHead>
-                <TableCell>{playerTitan ? playerTitan.stats[stat] : "-"}</TableCell>
-                <TableCell>{opponentTitan ? opponentTitan.stats[stat] : "-"}</TableCell>
-              </TableRow>
-            ))}
+            {/* Show HP from server meta when available */}
+            <TableRow>
+              <TableHead>HP</TableHead>
+              <TableCell>{playerHP}</TableCell>
+              <TableCell>{opponentHP}</TableCell>
+            </TableRow>
+
+            {statsOrder
+              .filter(s => s !== "HP")
+              .map(stat => (
+                <TableRow key={stat as string}>
+                  <TableHead>{stat}</TableHead>
+                  <TableCell>{playerTitan ? playerTitan.stats[stat] : "-"}</TableCell>
+                  <TableCell>{opponentTitan ? opponentTitan.stats[stat] : "-"}</TableCell>
+                </TableRow>
+              ))}
+
+            <TableRow>
+              <TableHead>Charge</TableHead>
+              <TableCell>{playerCharge}%</TableCell>
+              <TableCell>{opponentCharge}%</TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </div>

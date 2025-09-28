@@ -29,7 +29,11 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
     }
   }
 
-  const game = ctx.gameManager.createGame(gamePlayers, activeTitansForRequest);
+  // Build Titan objects array for the selected titan ids so GameManager can initialize HP/charge
+  const titanIdsPre = Object.values(activeTitansForRequest || {});
+  const titansForGame: Titan[] = titanIdsPre.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
+
+  const game = ctx.gameManager.createGame(gamePlayers, activeTitansForRequest, titansForGame);
 
   const titanIds = Object.values(game.titans || {});
   const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
