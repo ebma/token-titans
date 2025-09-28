@@ -7,7 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,25 +28,20 @@ export function CreateRoomDialog() {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create a new room</DialogTitle>
-          <DialogDescription>
-            Enter a name for your room to get started.
-          </DialogDescription>
+          <DialogDescription>Enter a name for your room to get started.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
+            <Label className="text-right" htmlFor="name">
               Room Name
             </Label>
-            <Input
-              id="name"
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-              className="col-span-3"
-            />
+            <Input className="col-span-3" id="name" onChange={e => setRoomName(e.target.value)} value={roomName} />
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleCreateRoom}>Create</Button>
+          <Button onClick={handleCreateRoom} type="submit">
+            Create
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

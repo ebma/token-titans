@@ -1,16 +1,11 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "composite": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["bun-types"],
-    "composite": true
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "types": ["bun-types"]
   },
-  "include": [
-    "vite.config.ts",
-    "postcss.config.cjs",
-    "tailwind.config.cjs",
-    "eslint.config.js"
-  ]
+  "extends": "../../tsconfig.base.json",
+  "include": ["vite.config.ts", "postcss.config.cjs", "tailwind.config.cjs", "eslint.config.js"]
 }

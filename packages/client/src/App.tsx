@@ -1,35 +1,35 @@
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Box } from '@react-three/drei'
-import { useEffect, useState } from 'react';
-import type { AppEvent, AuthResponseEvent } from '@shared/index';
-import { useAuthStore } from './hooks/useAuthStore';
-import { LoginForm } from './components/auth/LoginForm';
-import { Lobby } from './components/lobby/Lobby';
+import { Box, OrbitControls } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import type { AppEvent, AuthResponseEvent } from "@shared/index";
+import { useEffect, useState } from "react";
+import { LoginForm } from "./components/auth/LoginForm";
+import { Lobby } from "./components/lobby/Lobby";
+import { useAuthStore } from "./hooks/useAuthStore";
 
 function App() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const { session, setSession } = useAuthStore();
 
   useEffect(() => {
-    const socket = new WebSocket('ws://localhost:8081');
+    const socket = new WebSocket("ws://localhost:8081");
     setWs(socket);
 
     socket.onopen = () => {
-      console.log('Connected to server');
+      console.log("Connected to server");
     };
 
-    socket.onmessage = (event) => {
+    socket.onmessage = event => {
       const receivedEvent: AppEvent = JSON.parse(event.data);
-      
-      if (receivedEvent.type === 'authResponse') {
+
+      if (receivedEvent.type === "authResponse") {
         setSession((receivedEvent as AuthResponseEvent).payload);
       } else {
-        console.log('Message from server ', receivedEvent.type);
+        console.log("Message from server ", receivedEvent.type);
       }
     };
 
     socket.onclose = () => {
-      console.log('Disconnected from server');
+      console.log("Disconnected from server");
     };
 
     return () => {
@@ -44,5 +44,4 @@ function App() {
   return <Lobby />;
 }
 
-export default App
-
+export default App;

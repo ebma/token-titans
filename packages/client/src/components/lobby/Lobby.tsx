@@ -1,27 +1,27 @@
-import { PlayerList } from "./PlayerList";
-import { RoomList } from "./RoomList";
 import type { Player, Room } from "shared";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateRoomDialog } from "./CreateRoomDialog";
+import { PlayerList } from "./PlayerList";
+import { RoomList } from "./RoomList";
 
 const samplePlayers: Player[] = [
-  { id: '1', username: 'PlayerOne', status: 'lobby' },
-  { id: '2', username: 'PlayerTwo', status: 'in-game' },
+  { id: "1", status: "lobby", username: "PlayerOne" },
+  { id: "2", status: "in-game", username: "PlayerTwo" }
 ];
 
 const sampleRooms: Room[] = [
-  { id: '1', name: 'Room 1', players: ['1'], maxPlayers: 2 },
-  { id: '2', name: 'Room 2', players: [], maxPlayers: 4 },
+  { id: "1", maxPlayers: 2, name: "Room 1", players: ["1"] },
+  { id: "2", maxPlayers: 4, name: "Room 2", players: [] }
 ];
 
 export function Lobby() {
   return (
-    <div className="flex flex-col min-h-screen ">
-      <header className="p-4 border-b">
-        <h1 className="text-3xl font-bold tracking-tight">Game Lobby</h1>
+    <div className="flex min-h-screen flex-col ">
+      <header className="border-b p-4">
+        <h1 className="font-bold text-3xl tracking-tight">Game Lobby</h1>
       </header>
-      <main className="flex-1 p-4 md:p-6 grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 flex flex-col gap-6">
+      <main className="grid flex-1 gap-6 p-4 md:grid-cols-3 md:p-6">
+        <div className="flex flex-col gap-6 md:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle>Players</CardTitle>
@@ -31,7 +31,7 @@ export function Lobby() {
             </CardContent>
           </Card>
         </div>
-        <div className="md:col-span-2 flex flex-col gap-6">
+        <div className="flex flex-col gap-6 md:col-span-2">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

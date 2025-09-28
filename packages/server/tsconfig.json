@@ -1,13 +1,13 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
     "lib": ["es2022", "dom"],
+    "outDir": "./dist",
     "paths": {
       "@shared/*": ["../shared/src/*"]
-    }
+    },
+    "rootDir": "./src"
   },
+  "extends": "../../tsconfig.base.json",
   "include": ["src"],
   "references": [{ "path": "../shared" }]
 }

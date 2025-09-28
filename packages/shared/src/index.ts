@@ -1,7 +1,7 @@
 export type Player = {
   id: string;
   username: string;
-  status: 'lobby' | 'in-game';
+  status: "lobby" | "in-game";
 };
 
 export type Room = {
@@ -12,14 +12,14 @@ export type Room = {
 };
 
 export type AuthRequestEvent = {
-  type: 'authRequest';
+  type: "authRequest";
   payload: {
     username: string;
   };
 };
 
 export type AuthResponseEvent = {
-  type: 'authResponse';
+  type: "authResponse";
   payload: {
     sessionId: string;
     userId: string;
@@ -27,18 +27,20 @@ export type AuthResponseEvent = {
   };
 };
 
-export type GameEvent = {
-  type: 'playerMove';
-  payload: {
-    x: number;
-    y: number;
-    z: number;
-  };
-} | {
-  type: 'playerAttack';
-  payload: {
-    targetId: string;
-  };
-};
+export type GameEvent =
+  | {
+      type: "playerMove";
+      payload: {
+        x: number;
+        y: number;
+        z: number;
+      };
+    }
+  | {
+      type: "playerAttack";
+      payload: {
+        targetId: string;
+      };
+    };
 
 export type AppEvent = GameEvent | AuthRequestEvent | AuthResponseEvent;

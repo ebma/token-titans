@@ -1,13 +1,6 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { Player } from "shared";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function PlayerList({ players }: { players: Player[] }) {
   return (
@@ -20,7 +13,7 @@ export function PlayerList({ players }: { players: Player[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {players.map((player) => (
+          {players.map(player => (
             <TableRow key={player.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
@@ -32,11 +25,13 @@ export function PlayerList({ players }: { players: Player[] }) {
                 </div>
               </TableCell>
               <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  player.status === 'in-game'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400'
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-400'
-                }`}>
+                <span
+                  className={`rounded-full px-2 py-1 font-medium text-xs ${
+                    player.status === "in-game"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400"
+                      : "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-400"
+                  }`}
+                >
                   {player.status}
                 </span>
               </TableCell>
@@ -45,5 +40,5 @@ export function PlayerList({ players }: { players: Player[] }) {
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
