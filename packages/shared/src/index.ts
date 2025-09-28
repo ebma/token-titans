@@ -102,6 +102,12 @@ export type CreateRoomRequestEvent = {
     maxPlayers: number;
   };
 };
+export type JoinRoomRequestEvent = {
+  type: "joinRoomRequest";
+  payload: {
+    roomId: string;
+  };
+};
 
 export type AppEvent =
   | GameEvent
@@ -112,4 +118,5 @@ export type AppEvent =
   | PlayerActionEvent
   | LobbyInfoRequestEvent
   | LobbyUpdateEvent
-  | CreateRoomRequestEvent;
+  | CreateRoomRequestEvent
+  | JoinRoomRequestEvent;

@@ -1,8 +1,26 @@
-import type { Room } from "shared";
+import type { JoinRoomRequestEvent, Room } from "shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function RoomList({ rooms }: { rooms: Room[] }) {
+type RoomListProps = {
+  rooms: Room[];
+  ws: WebSocket | null;
+};
+
+export function RoomList({ rooms, ws }: RoomListProps) {
+  const handleJoinRoom = (roomId: string) => {
+    if (!ws) {
+      return;
+    }
+
+    const event: JoinRoomRequestEvent = {
+      payload: { roomId },
+      type: "joinRoomRequest"
+    };
+
+    ws.send(JSON.stringify(event));
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {rooms.map(room => (
@@ -17,7 +35,13 @@ export function RoomList({ rooms }: { rooms: Room[] }) {
             <p className="text-sm">A game of something.</p>
           </CardContent>
           <CardFooter>
-            <Button className="w-full">Join Room</Button>
+            <Button
+              className="w-full"
+              disabled={room.players.length >= room.maxPlayers}
+              onClick={() => handleJoinRoom(room.id)}
+            >
+              Join Room
+            </Button>
           </CardFooter>
         </Card>
       ))}

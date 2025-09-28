@@ -106,6 +106,12 @@ wss.on("connection", function connection(ws: WebSocket) {
       const { name, maxPlayers } = (event as CreateRoomRequestEvent).payload;
       lobbyManager.createRoom(name, maxPlayers);
       broadcastLobbyUpdate();
+    } else if (event.type === "joinRoomRequest") {
+      const userId = wsConnections.get(ws);
+      if (userId) {
+        lobbyManager.joinRoom(userId, event.payload.roomId);
+        broadcastLobbyUpdate();
+      }
     } else {
       console.log("received: %s", event.type);
     }
@@ -114,6 +120,7 @@ wss.on("connection", function connection(ws: WebSocket) {
   ws.on("close", () => {
     const userId = wsConnections.get(ws);
     if (userId) {
+      lobbyManager.leaveRoom(userId);
       users.delete(userId);
       userConnections.delete(userId);
       wsConnections.delete(ws);

@@ -30,4 +30,21 @@ export class LobbyManager {
       rooms: Array.from(this.rooms.values())
     };
   }
+
+  leaveRoom(playerId: string) {
+    for (const room of this.rooms.values()) {
+      const playerIndex = room.players.indexOf(playerId);
+      if (playerIndex > -1) {
+        room.players.splice(playerIndex, 1);
+      }
+    }
+  }
+
+  joinRoom(playerId: string, roomId: string) {
+    this.leaveRoom(playerId);
+    const room = this.rooms.get(roomId);
+    if (room && room.players.length < room.maxPlayers) {
+      room.players.push(playerId);
+    }
+  }
 }
