@@ -1,4 +1,11 @@
-import type { AppEvent, AuthResponseEvent, GameStartEvent, LobbyInfoRequestEvent, LobbyUpdateEvent } from "@shared/index";
+import type {
+  AppEvent,
+  AuthResponseEvent,
+  GameStartEvent,
+  LobbyInfoRequestEvent,
+  LobbyUpdateEvent,
+  ReconnectRequestEvent
+} from "@shared/index";
 import { useEffect, useState } from "react";
 import { WEB_SERVER_URL } from "@/lib/constants.ts";
 import { LoginForm } from "./components/auth/LoginForm";
@@ -20,8 +27,20 @@ function App() {
 
     socket.onopen = () => {
       console.log("Connected to server");
-      const event: LobbyInfoRequestEvent = { type: "lobbyInfoRequest" };
-      socket.send(JSON.stringify(event));
+      const rehydratedSession = useAuthStore.getState().session;
+
+      if (rehydratedSession?.sessionId) {
+        console.log("Reconnecting with session:", rehydratedSession.sessionId);
+        const event: ReconnectRequestEvent = {
+          payload: { sessionId: rehydratedSession.sessionId },
+          type: "reconnectRequest"
+        };
+        socket.send(JSON.stringify(event));
+      } else {
+        console.log("New connection, requesting lobby info");
+        const event: LobbyInfoRequestEvent = { type: "lobbyInfoRequest" };
+        socket.send(JSON.stringify(event));
+      }
     };
 
     socket.onmessage = event => {

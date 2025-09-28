@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 type Session = {
   sessionId: string;
@@ -12,8 +13,15 @@ type AuthState = {
   clearSession: () => void;
 };
 
-export const useAuthStore = create<AuthState>(set => ({
-  clearSession: () => set({ session: null }),
-  session: null,
-  setSession: session => set({ session })
-}));
+export const useAuthStore = create(
+  persist<AuthState>(
+    set => ({
+      clearSession: () => set({ session: null }),
+      session: null,
+      setSession: session => set({ session })
+    }),
+    {
+      name: "auth-storage" // name of the item in the storage (must be unique)
+    }
+  )
+);

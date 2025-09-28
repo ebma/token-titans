@@ -33,4 +33,13 @@ export class GameManager {
     // For now, we just return the current state.
     return game;
   }
+
+  getGameByPlayerId(playerId: string): Game | undefined {
+    for (const game of this.games.values()) {
+      if (game.players.includes(playerId)) {
+        return game;
+      }
+    }
+    return undefined;
+  }
 }

@@ -27,9 +27,9 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="flex h-full w-full flex-col">
       <div className="flex-grow">
-        <Canvas>
+        <Canvas fallback={<div>Sorry no WebGL supported!</div>} style={{ height: 400 }}>
           <ambientLight intensity={0.5} />
           <directionalLight position={[0, 10, 5]} />
           <Plane args={[10, 10]} position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>

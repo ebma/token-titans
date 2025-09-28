@@ -54,6 +54,13 @@ export type AuthResponseEvent = {
   };
 };
 
+export type ReconnectRequestEvent = {
+  type: "reconnectRequest";
+  payload: {
+    sessionId: string;
+  };
+};
+
 export type CreateGameRequestEvent = {
   type: "createGameRequest";
   payload: {
@@ -119,4 +126,5 @@ export type AppEvent =
   | LobbyInfoRequestEvent
   | LobbyUpdateEvent
   | CreateRoomRequestEvent
-  | JoinRoomRequestEvent;
+  | JoinRoomRequestEvent
+  | ReconnectRequestEvent;

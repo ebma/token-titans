@@ -9,17 +9,19 @@ import type {
   GameStartEvent,
   LobbyUpdateEvent,
   Player,
-  PlayerActionEvent
+  PlayerActionEvent,
+  ReconnectRequestEvent
 } from "../../shared/src";
 import { GameManager } from "./game";
 import { LobbyManager } from "./lobby";
 
-const port = process.env.PORT || 4000;
+const port = Number.parseInt(process.env.PORT || "4000", 10);
 
 const wss = new WebSocketServer({ port });
 const gameManager = new GameManager();
 const lobbyManager = new LobbyManager();
 
+const sessions = new Map<string, { userId: string; username: string }>();
 const userConnections = new Map<string, WebSocket>(); // userId -> WebSocket
 const wsConnections = new Map<WebSocket, string>(); // WebSocket -> userId
 const users = new Map<string, Player>();
@@ -48,14 +50,16 @@ wss.on("connection", function connection(ws: WebSocket) {
     if (event.type === "authRequest") {
       const { username } = (event as AuthRequestEvent).payload;
       const userId = uuidv4();
+      const sessionId = uuidv4();
       const newPlayer: Player = { id: userId, status: "lobby", username };
       users.set(userId, newPlayer);
       userConnections.set(userId, ws);
       wsConnections.set(ws, userId);
+      sessions.set(sessionId, { userId, username });
       lobbyManager.addPlayer(newPlayer);
 
       const response: AuthResponseEvent = {
-        payload: { sessionId: "", userId, username }, // sessionId is not used anymore
+        payload: { sessionId, userId, username },
         type: "authResponse"
       };
       ws.send(JSON.stringify(response));
@@ -111,6 +115,47 @@ wss.on("connection", function connection(ws: WebSocket) {
       if (userId) {
         lobbyManager.joinRoom(userId, event.payload.roomId);
         broadcastLobbyUpdate();
+      }
+    } else if (event.type === "reconnectRequest") {
+      const { sessionId } = (event as ReconnectRequestEvent).payload;
+      const session = sessions.get(sessionId);
+
+      if (session) {
+        const { userId, username } = session;
+        console.log(`Reconnecting user ${username} with session ${sessionId}`);
+        // Update connections
+        userConnections.set(userId, ws);
+        wsConnections.set(ws, userId);
+
+        // Ensure user exists in the main users map if they aren't there
+        if (!users.has(userId)) {
+          const newPlayer: Player = { id: userId, status: "lobby", username };
+          users.set(userId, newPlayer);
+          lobbyManager.addPlayer(newPlayer);
+        }
+
+        // Send auth response
+        const authResponse: AuthResponseEvent = {
+          payload: { sessionId, userId, username },
+          type: "authResponse"
+        };
+        ws.send(JSON.stringify(authResponse));
+
+        // Send current lobby state
+        broadcastLobbyUpdate();
+
+        // Check if user is in a game and send game state
+        const game = gameManager.getGameByPlayerId(userId);
+        if (game) {
+          const gameStartEvent: GameStartEvent = {
+            payload: { game },
+            type: "gameStart"
+          };
+          ws.send(JSON.stringify(gameStartEvent));
+        }
+      } else {
+        console.log(`Invalid session ID received: ${sessionId}`);
+        // Optionally, send an error back to the client
       }
     } else {
       console.log("received: %s", event.type);
