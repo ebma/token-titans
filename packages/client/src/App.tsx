@@ -101,7 +101,7 @@ function App() {
     return <Lobby ws={ws} />;
   }, [ws, session, game]);
 
-  return <div className=" bg-gray-100 dark:bg-gray-900">{content}</div>;
+  return <div className="min-h-screen bg-gray-100 dark:bg-gray-900">{content}</div>;
 }
 
 export default App;

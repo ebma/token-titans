@@ -86,7 +86,8 @@ export class GameManager {
     this.roundActions.set(game.id, {});
 
     // Attach lightweight ephemeral meta to the stored Game object for broadcasting.
-    (game as any).meta = {
+    game.meta = {
+      roundLog: [],
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
     };
@@ -117,7 +118,8 @@ export class GameManager {
     this.gameTitans.set(gameId, titanRecord);
     this.roundActions.set(gameId, {});
 
-    (game as any).meta = {
+    game.meta = {
+      roundLog: [],
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
     };
@@ -253,7 +255,8 @@ export class GameManager {
         const rand = Math.random();
         const attackValue = (attackerTitan?.stats.Attack ?? 0) * (1 + rand);
         const defenderBaseDef = defenderTitan?.stats.Defense ?? 0;
-        const effectiveDef = defenderAction?.type === "Defend" ? defenderBaseDef * 1.5 : defenderBaseDef;
+        const defMultiplier = defenderAction?.type === "Defend" ? 1.5 + Math.random() * 0.5 : 1; // Between 1.5 and 2.0
+        const effectiveDef = defenderBaseDef * defMultiplier;
         const damage = Math.max(0, attackValue - effectiveDef);
 
         const beforeHP = hpRecord[defenderTitanId] ?? 0;
@@ -323,7 +326,7 @@ export class GameManager {
     this.titanCharges.set(gameId, chargeRecord);
 
     // Update ephemeral meta on the game object so handlers can broadcast it, include roundLog
-    (game as any).meta = {
+    game.meta = {
       roundLog,
       titanCharges: { ...chargeRecord },
       titanHPs: { ...hpRecord }
