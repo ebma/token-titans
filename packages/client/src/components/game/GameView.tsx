@@ -36,11 +36,16 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const opponentTitan = titans.find(t => t.id === opponentTitanId);
   const statsOrder = ["HP", "Attack", "Defense", "Speed", "Stamina"] as const;
 
-  // Read server-provided ephemeral charge/HP meta (may be absent)
+  // Read server-provided ephemeral charge/HP meta (may be absent) and optional round log
   const meta =
-    (game as unknown as { meta?: { titanCharges?: Record<string, number>; titanHPs?: Record<string, number> } })?.meta ?? {};
+    (
+      game as unknown as {
+        meta?: { titanCharges?: Record<string, number>; titanHPs?: Record<string, number>; roundLog?: string[] };
+      }
+    )?.meta ?? {};
   const charges: Record<string, number> = meta.titanCharges ?? {};
   const hpMeta: Record<string, number> = meta.titanHPs ?? {};
+  const roundLog: string[] = meta.roundLog ?? [];
   const playerCharge = playerTitanId ? (charges[playerTitanId] ?? 0) : 0;
   const opponentCharge = opponentTitanId ? (charges[opponentTitanId] ?? 0) : 0;
   const playerHP = playerTitanId ? (hpMeta[playerTitanId] ?? playerTitan?.stats.HP ?? "-") : "-";
@@ -146,6 +151,21 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
             </TableRow>
           </TableBody>
         </Table>
+      </div>
+
+      <div className="p-4">
+        <h3 className="font-bold mb-2">Game Log</h3>
+        <div>
+          {roundLog.length === 0 ? (
+            <div>No events yet.</div>
+          ) : (
+            roundLog.map((msg, idx) => (
+              <div className="text-sm leading-6" key={idx}>
+                {msg}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

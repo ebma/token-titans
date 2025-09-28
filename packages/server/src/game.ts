@@ -187,81 +187,144 @@ export class GameManager {
     const hpRecord = { ...(this.titanHPs.get(gameId) ?? {}) };
     const chargeRecord = { ...(this.titanCharges.get(gameId) ?? {}) };
 
-    // We'll compute damage to apply to each defender based on starting state (simultaneous)
-    const damageToApply: Record<string, number> = {};
-    for (const p of game.players) damageToApply[p] = 0;
-
     // Helper to get titan id and titan object for a player
     const getTitanId = (playerId: string) => game.titans[playerId];
     const getTitanObj = (titanId: string) => titansForGame[titanId];
 
-    // First pass: evaluate actions to compute damage and immediate charge changes (like Rest and Special)
-    for (const attacker of game.players) {
-      const defender = game.players.find(p => p !== attacker)!;
+    // Prepare round log
+    const roundLog: string[] = [];
+
+    // Log choices (locked before resolving)
+    for (const player of game.players) {
+      const act = actions[player];
+      const titanId = getTitanId(player);
+      const titanObj = getTitanObj(titanId);
+      if (act) {
+        roundLog.push(
+          `${titanObj?.name ?? titanId} chooses to ${act.type === "SpecialAbility" ? "SpecialAbility" : act.type}.`
+        );
+      }
+    }
+
+    // Ensure records exist for all involved titans
+    for (const p of game.players) {
+      const tid = getTitanId(p);
+      const t = getTitanObj(tid);
+      if (!(tid in hpRecord)) hpRecord[tid] = t?.stats.HP ?? 0;
+      if (!(tid in chargeRecord)) chargeRecord[tid] = 0;
+    }
+
+    // Compute speed rolls and determine action order
+    const speedRolls: Record<string, number> = {};
+    for (const player of game.players) {
+      const tid = getTitanId(player);
+      const titan = getTitanObj(tid);
+      speedRolls[player] = (titan?.stats.Speed ?? 0) * Math.random();
+    }
+    const order = [...game.players].sort((a, b) => speedRolls[b] - speedRolls[a]); // descending: higher speedRoll acts first
+
+    // Resolve actions sequentially in order
+    for (const attacker of order) {
+      // If game already finished due to earlier action, skip remaining
+      if (game.gameState === "Finished") break;
+
       const act = actions[attacker];
       if (!act) continue;
 
+      const defender = game.players.find(p => p !== attacker)!;
       const attackerTitanId = getTitanId(attacker);
       const defenderTitanId = getTitanId(defender);
       const attackerTitan = getTitanObj(attackerTitanId);
       const defenderTitan = getTitanObj(defenderTitanId);
+      const defenderAction = actions[defender];
 
-      // Ensure records exist
+      // Ensure hp/charge exist
       if (!(attackerTitanId in hpRecord)) hpRecord[attackerTitanId] = attackerTitan?.stats.HP ?? 0;
       if (!(defenderTitanId in hpRecord)) hpRecord[defenderTitanId] = defenderTitan?.stats.HP ?? 0;
       if (!(attackerTitanId in chargeRecord)) chargeRecord[attackerTitanId] = 0;
       if (!(defenderTitanId in chargeRecord)) chargeRecord[defenderTitanId] = 0;
 
-      const defenderAction = actions[defender];
+      // If defender already dead, skip applying this action
+      if ((hpRecord[defenderTitanId] ?? 0) <= 0) {
+        continue;
+      }
 
       if (act.type === "Attack") {
-        // random in [0,1)
         const rand = Math.random();
         const attackValue = (attackerTitan?.stats.Attack ?? 0) * (1 + rand);
         const defenderBaseDef = defenderTitan?.stats.Defense ?? 0;
         const effectiveDef = defenderAction?.type === "Defend" ? defenderBaseDef * 1.5 : defenderBaseDef;
         const damage = Math.max(0, attackValue - effectiveDef);
-        damageToApply[defender] += damage;
 
-        // If defender defended this attack, it charges +25 (cap later)
+        const beforeHP = hpRecord[defenderTitanId] ?? 0;
+        const afterHP = Math.round(Math.max(0, beforeHP - damage));
+        hpRecord[defenderTitanId] = afterHP;
+
+        // If defender defended this attack, it charges +25 (cap below)
         if (defenderAction?.type === "Defend") {
-          chargeRecord[defenderTitanId] = Math.min(100, (chargeRecord[defenderTitanId] ?? 0) + 25);
+          chargeRecord[defenderTitanId] = Math.min(100, Math.round((chargeRecord[defenderTitanId] ?? 0) + 25));
+          roundLog.push(
+            `${defenderTitan?.name ?? defenderTitanId} defended and charges special by +25 (now ${chargeRecord[defenderTitanId]}%).`
+          );
+        }
+
+        roundLog.push(
+          `${attackerTitan?.name ?? attackerTitanId} deals ${Math.round(damage)} damage to ${defenderTitan?.name ?? defenderTitanId} (HP: ${Math.round(
+            beforeHP
+          )} -> ${afterHP}).`
+        );
+
+        // If defender died, mark finished and log
+        if (afterHP <= 0) {
+          game.gameState = "Finished";
+          roundLog.push(`${defenderTitan?.name ?? defenderTitanId} is defeated — ${defender} wins.`);
+          // Do not allow further actions
+          break;
         }
       } else if (act.type === "SpecialAbility") {
         // Only reachable when charge was validated earlier
         const damage = (attackerTitan?.stats.Attack ?? 0) * 2;
-        damageToApply[defender] += damage;
+        const beforeHP = hpRecord[defenderTitanId] ?? 0;
+        const afterHP = Math.round(Math.max(0, beforeHP - damage));
+        hpRecord[defenderTitanId] = afterHP;
+
         // reset attacker's charge to 0
         chargeRecord[attackerTitanId] = 0;
+
+        roundLog.push(`${attackerTitan?.name ?? attackerTitanId} uses SpecialAbility dealing ${Math.round(damage)} damage.`);
+
+        roundLog.push(
+          `${attackerTitan?.name ?? attackerTitanId} deals ${Math.round(damage)} damage to ${defenderTitan?.name ?? defenderTitanId} (HP: ${Math.round(
+            beforeHP
+          )} -> ${afterHP}).`
+        );
+
+        if (afterHP <= 0) {
+          game.gameState = "Finished";
+          roundLog.push(`${defenderTitan?.name ?? defenderTitanId} is defeated — ${defender} wins.`);
+          break;
+        }
       } else if (act.type === "Rest") {
-        // Set attacker's special charge to 100 immediately
         chargeRecord[attackerTitanId] = 100;
+        roundLog.push(`${attackerTitan?.name ?? attackerTitanId} rests and charge set to 100%.`);
       } else if (act.type === "Defend") {
-        // Defend itself does not deal damage; if opponent attacked it's handled above.
-        // Nothing else to do here.
+        // Defend only matters when being attacked (handled in attack branch)
+        // No immediate HP change; we already logged the choice above.
       }
     }
 
-    // Second pass: apply computed damages to defenders' HP
-    for (const player of game.players) {
-      const titanId = game.titans[player];
-      const before = hpRecord[titanId] ?? 0;
-      const damage = damageToApply[player] ?? 0;
-      const after = Math.max(0, before - damage);
-      hpRecord[titanId] = after;
-    }
-
-    // Ensure charges are bounded between 0 and 100
+    // Ensure charges are integers and bounded between 0 and 100
     for (const tid of Object.keys(chargeRecord)) {
-      chargeRecord[tid] = Math.max(0, Math.min(100, chargeRecord[tid]));
+      chargeRecord[tid] = Math.max(0, Math.min(100, Math.round(chargeRecord[tid])));
     }
 
     // Store back updated records
     this.titanHPs.set(gameId, hpRecord);
     this.titanCharges.set(gameId, chargeRecord);
 
-    // Update ephemeral meta on the game object so handlers can broadcast it
+    // Update ephemeral meta on the game object so handlers can broadcast it, include roundLog
     (game as any).meta = {
+      roundLog,
       titanCharges: { ...chargeRecord },
       titanHPs: { ...hpRecord }
     };

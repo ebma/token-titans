@@ -7,7 +7,7 @@ import type {
   ReconnectFailedEvent,
   ReconnectRequestEvent
 } from "@shared/index";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { WEB_SERVER_URL } from "@/lib/constants.ts";
 import { LoginForm } from "./components/auth/LoginForm";
 import { GameView } from "./components/game/GameView";
@@ -89,15 +89,19 @@ function App() {
     };
   }, [setSession, setGame, setLobbyState, clearSession, setTitans]);
 
-  if (game) {
-    return <GameView ws={ws} />;
-  }
+  const content = useMemo(() => {
+    if (game) {
+      return <GameView ws={ws} />;
+    }
 
-  if (!session) {
-    return <LoginForm ws={ws} />;
-  }
+    if (!session) {
+      return <LoginForm ws={ws} />;
+    }
 
-  return <Lobby ws={ws} />;
+    return <Lobby ws={ws} />;
+  }, [ws, session, game]);
+
+  return <div className=" bg-gray-100 dark:bg-gray-900">{content}</div>;
 }
 
 export default App;

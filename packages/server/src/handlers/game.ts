@@ -62,8 +62,15 @@ export function handlePlayerAction(ws: WebSocket, event: PlayerActionEvent, ctx:
   const titanIds = Object.values(game.titans || {});
   const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
 
+  // Ensure the game object sent to clients includes ephemeral meta (if present on the server-side game object)
+  const gameToSend = {
+    ...game,
+    // attach meta if it exists on the in-memory game object
+    ...((game as any).meta ? { meta: (game as any).meta } : {})
+  };
+
   const gameUpdateEvent: GameEvent = {
-    payload: { game, titans },
+    payload: { game: gameToSend as unknown as any, titans },
     type: "GameUpdate"
   };
 

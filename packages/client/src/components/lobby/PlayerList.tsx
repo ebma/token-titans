@@ -29,7 +29,7 @@ export function PlayerList({ players }: { players: Player[] }) {
                   className={`rounded-full px-2 py-1 font-medium text-xs ${
                     player.status === "in-game"
                       ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400"
-                      : "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-400"
+                      : "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-200"
                   }`}
                 >
                   {player.status}

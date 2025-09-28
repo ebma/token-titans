@@ -21,7 +21,7 @@ export function Lobby({ ws }: LobbyProps) {
   return (
     <div className="flex min-h-screen flex-col ">
       <header className="border-b p-4">
-        <h1 className="font-bold text-3xl tracking-tight">Game Lobby</h1>
+        <h1 className="w-fit rounded-2xl bg-primary px-4 font-bold text-3xl tracking-tight">Game Lobby</h1>
       </header>
       <main className="grid flex-1 gap-6 p-4 md:grid-cols-3 md:p-6">
         <div className="flex flex-col gap-6 md:col-span-1">

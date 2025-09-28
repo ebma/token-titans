@@ -1,6 +1,7 @@
 // TitanList.tsx
+
+import type { Titan } from "@shared/index.ts";
 import React from "react";
-import type { Titan } from "../../../../shared/src/index";
 import { Card } from "../ui/card";
 import { Table } from "../ui/table";
 
