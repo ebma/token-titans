@@ -2,6 +2,7 @@ import { Box, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import type { GameAction, PlayerActionEvent } from "@shared/index";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { useGameStore } from "@/hooks/useGameStore";
@@ -117,56 +118,64 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         <Button onClick={() => handleAction({ type: "Rest" })}>Rest</Button>
       </div>
 
-      <div className="p-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Stat</TableHead>
-              <TableHead>{playerTitan?.name ?? "You"}</TableHead>
-              <TableHead>{opponentTitan?.name ?? "Opponent"}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {/* Show HP from server meta when available */}
-            <TableRow>
-              <TableHead>HP</TableHead>
-              <TableCell>{playerHP}</TableCell>
-              <TableCell>{opponentHP}</TableCell>
-            </TableRow>
+      <Card className="m-4">
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stat</TableHead>
+                <TableHead>{playerTitan?.name ?? "You"}</TableHead>
+                <TableHead>{opponentTitan?.name ?? "Opponent"}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {/* Show HP from server meta when available */}
+              <TableRow>
+                <TableHead>HP</TableHead>
+                <TableCell>{playerHP}</TableCell>
+                <TableCell>{opponentHP}</TableCell>
+              </TableRow>
 
-            {statsOrder
-              .filter(s => s !== "HP")
-              .map(stat => (
-                <TableRow key={stat as string}>
-                  <TableHead>{stat}</TableHead>
-                  <TableCell>{playerTitan ? playerTitan.stats[stat] : "-"}</TableCell>
-                  <TableCell>{opponentTitan ? opponentTitan.stats[stat] : "-"}</TableCell>
-                </TableRow>
-              ))}
+              {statsOrder
+                .filter(s => s !== "HP")
+                .map(stat => (
+                  <TableRow key={stat as string}>
+                    <TableHead>{stat}</TableHead>
+                    <TableCell>{playerTitan ? playerTitan.stats[stat] : "-"}</TableCell>
+                    <TableCell>{opponentTitan ? opponentTitan.stats[stat] : "-"}</TableCell>
+                  </TableRow>
+                ))}
 
-            <TableRow>
-              <TableHead>Charge</TableHead>
-              <TableCell>{playerCharge}%</TableCell>
-              <TableCell>{opponentCharge}%</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+              <TableRow>
+                <TableHead>Charge</TableHead>
+                <TableCell>{playerCharge}%</TableCell>
+                <TableCell>{opponentCharge}%</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-      <div className="p-4">
-        <h3 className="font-bold mb-2">Game Log</h3>
-        <div>
-          {roundLog.length === 0 ? (
-            <div>No events yet.</div>
-          ) : (
-            roundLog.map((msg, idx) => (
-              <div className="text-sm leading-6" key={idx}>
-                {msg}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <Card className="m-4">
+        <CardHeader>
+          <CardTitle>
+            <h3 className="mb-2 font-bold">Game Log</h3>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>
+            {roundLog.length === 0 ? (
+              <div>No events yet.</div>
+            ) : (
+              roundLog.map((msg, idx) => (
+                <div className="text-sm leading-6" key={idx}>
+                  {msg}
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
