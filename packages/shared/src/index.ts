@@ -11,6 +11,33 @@ export type Room = {
   maxPlayers: number;
 };
 
+export type AssetStat = "HP" | "Attack" | "Defense" | "Speed" | "Stamina";
+
+export type Asset = {
+  id: string;
+  name: string;
+  stats: Record<AssetStat, number>;
+  specialAbility: string;
+};
+
+export type GameState = "Lobby" | "PreBattle" | "Battle" | "Finished";
+
+export type GameMode = "1v1" | "2v2";
+
+export type Game = {
+  id: string;
+  players: string[];
+  assets: Record<string, string>; // PlayerID to AssetID
+  gameState: GameState;
+  gameMode: GameMode;
+};
+
+export type GameAction =
+  | { type: "Attack"; payload: { targetId: string } }
+  | { type: "Defend" }
+  | { type: "SpecialAbility"; payload: { targetId: string } }
+  | { type: "Rest" };
+
 export type AuthRequestEvent = {
   type: "authRequest";
   payload: {
@@ -27,20 +54,39 @@ export type AuthResponseEvent = {
   };
 };
 
-export type GameEvent =
-  | {
-      type: "playerMove";
-      payload: {
-        x: number;
-        y: number;
-        z: number;
-      };
-    }
-  | {
-      type: "playerAttack";
-      payload: {
-        targetId: string;
-      };
-    };
+export type CreateGameRequestEvent = {
+  type: "createGameRequest";
+  payload: {
+    playerIds: string[];
+  };
+};
 
-export type AppEvent = GameEvent | AuthRequestEvent | AuthResponseEvent;
+export type GameStartEvent = {
+  type: "gameStart";
+  payload: {
+    game: Game;
+  };
+};
+
+export type PlayerActionEvent = {
+  type: "playerAction";
+  payload: {
+    gameId: string;
+    playerId: string;
+    action: GameAction;
+  };
+};
+
+export type GameEvent =
+  | { type: "GameStart"; payload: { game: Game } }
+  | { type: "GameUpdate"; payload: { game: Game } }
+  | { type: "ActionRequest"; payload: { playerId: string } }
+  | { type: "ActionResponse"; payload: { playerId: string; action: GameAction } };
+
+export type AppEvent =
+  | GameEvent
+  | AuthRequestEvent
+  | AuthResponseEvent
+  | CreateGameRequestEvent
+  | GameStartEvent
+  | PlayerActionEvent;

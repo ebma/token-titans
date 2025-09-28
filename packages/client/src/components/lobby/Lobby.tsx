@@ -1,5 +1,7 @@
-import type { Player, Room } from "shared";
+import type { CreateGameRequestEvent, Player, Room } from "@shared/index";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuthStore } from "@/hooks/useAuthStore";
 import { CreateRoomDialog } from "./CreateRoomDialog";
 import { PlayerList } from "./PlayerList";
 import { RoomList } from "./RoomList";
@@ -14,7 +16,25 @@ const sampleRooms: Room[] = [
   { id: "2", maxPlayers: 4, name: "Room 2", players: [] }
 ];
 
-export function Lobby() {
+type LobbyProps = {
+  ws: WebSocket | null;
+};
+
+export function Lobby({ ws }: LobbyProps) {
+  const { session } = useAuthStore();
+
+  const handleStartGame = () => {
+    if (ws && session) {
+      const createGameRequest: CreateGameRequestEvent = {
+        payload: {
+          playerIds: [session.userId, "dummy-player-id"]
+        },
+        type: "createGameRequest"
+      };
+      ws.send(JSON.stringify(createGameRequest));
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col ">
       <header className="border-b p-4">
@@ -43,6 +63,7 @@ export function Lobby() {
               <RoomList rooms={sampleRooms} />
             </CardContent>
           </Card>
+          <Button onClick={handleStartGame}>Start Game</Button>
         </div>
       </main>
     </div>
