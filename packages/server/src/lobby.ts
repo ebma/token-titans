@@ -1,5 +1,5 @@
+import type { Player, Room } from "@shared/index";
 import { randomUUID } from "crypto";
-import type { Player, Room } from "../../shared/src";
 
 export class LobbyManager {
   players = new Map<string, Player>();

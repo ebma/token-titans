@@ -1,4 +1,4 @@
-import { Titan, TitanStat } from "../../shared/src/index";
+import { Titan, TitanStat } from "@shared/index";
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
