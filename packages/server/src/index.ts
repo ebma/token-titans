@@ -9,7 +9,8 @@ import type {
   Player,
   PlayerActionEvent,
   ReconnectFailedEvent,
-  ReconnectRequestEvent
+  ReconnectRequestEvent,
+  Titan
 } from "@shared/index";
 import { v4 as uuidv4 } from "uuid";
 import { WebSocket, WebSocketServer } from "ws";
@@ -77,9 +78,27 @@ wss.on("connection", function connection(ws: WebSocket) {
       const gamePlayers = playerIds.map(id => users.get(id)).filter(Boolean) as Player[];
 
       if (gamePlayers.length === playerIds.length) {
-        const game = gameManager.createGame(gamePlayers);
+        // Build mapping playerId -> titanId:
+        // 1) Prefer GameManager's tracked active titan if present
+        // 2) Otherwise fall back to TitanManager's first titan for the player (if any)
+        const activeTitansForRequest: Record<string, string> = {};
+        for (const pid of playerIds) {
+          const active = gameManager.getActiveTitan(pid); // use GameManager's API
+          if (active) {
+            activeTitansForRequest[pid] = active;
+          } else {
+            const playerTitans = titanManager.getTitansForPlayer(pid);
+            if (playerTitans.length > 0) {
+              activeTitansForRequest[pid] = playerTitans[0].id; // fallback to first titan
+            }
+          }
+        }
+
+        const game = gameManager.createGame(gamePlayers, activeTitansForRequest);
+        const titanIds = Object.values(game.titans || {});
+        const titans: Titan[] = titanIds.map(id => titanManager.titans.get(id)).filter(Boolean) as Titan[];
         const gameStartEvent: GameStartEvent = {
-          payload: { game },
+          payload: { game, titans },
           type: "gameStart"
         };
 
@@ -95,8 +114,10 @@ wss.on("connection", function connection(ws: WebSocket) {
       const { gameId, playerId, action } = (event as PlayerActionEvent).payload;
       const game = gameManager.handlePlayerAction(gameId, playerId, action);
       if (game) {
+        const titanIds = Object.values(game.titans || {});
+        const titans: Titan[] = titanIds.map(id => titanManager.titans.get(id)).filter(Boolean) as Titan[];
         const gameUpdateEvent = {
-          payload: { game },
+          payload: { game, titans },
           type: "GameUpdate"
         };
         game.players.forEach(pId => {
@@ -157,8 +178,10 @@ wss.on("connection", function connection(ws: WebSocket) {
         // Check if user is in a game and send game state
         const game = gameManager.getGameByPlayerId(userId);
         if (game) {
+          const titanIds = Object.values(game.titans || {});
+          const titans: Titan[] = titanIds.map(id => titanManager.titans.get(id)).filter(Boolean) as Titan[];
           const gameStartEvent: GameStartEvent = {
-            payload: { game },
+            payload: { game, titans },
             type: "gameStart"
           };
           ws.send(JSON.stringify(gameStartEvent));

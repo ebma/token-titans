@@ -80,6 +80,7 @@ export type GameStartEvent = {
   type: "gameStart";
   payload: {
     game: Game;
+    titans: Titan[];
   };
 };
 
@@ -94,7 +95,7 @@ export type PlayerActionEvent = {
 
 export type GameEvent =
   | { type: "GameStart"; payload: { game: Game } }
-  | { type: "GameUpdate"; payload: { game: Game } }
+  | { type: "GameUpdate"; payload: { game: Game; titans: Titan[] } }
   | { type: "ActionRequest"; payload: { playerId: string } }
   | { type: "ActionResponse"; payload: { playerId: string; action: GameAction } };
 

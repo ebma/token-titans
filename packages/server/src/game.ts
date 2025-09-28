@@ -3,14 +3,42 @@ import { randomUUID } from "crypto";
 
 export class GameManager {
   private games: Map<string, Game> = new Map();
+  // Track current active titan per player (playerId -> titanId)
+  private activeTitans: Map<string, string> = new Map();
 
-  createGame(players: { id: string; username: string }[]): Game {
+  // Set a player's active titan
+  setActiveTitan(playerId: string, titanId: string): void {
+    this.activeTitans.set(playerId, titanId);
+  }
+
+  // Get a player's active titan id
+  getActiveTitan(playerId: string): string | undefined {
+    return this.activeTitans.get(playerId);
+  }
+
+  // Return mapping of playerId -> titanId for known active titans among the provided players
+  getActiveTitansForPlayers(playerIds: string[]): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const playerId of playerIds) {
+      const titanId = this.activeTitans.get(playerId);
+      if (titanId) {
+        result[playerId] = titanId;
+      }
+    }
+    return result;
+  }
+
+  // Accept optional activeTitans mapping; if omitted, populate from internal tracking
+  createGame(players: { id: string; username: string }[], activeTitans?: Record<string, string>): Game {
+    // Use provided mapping when available, otherwise use stored active titans for these players
+    const titansMapping = activeTitans ?? this.getActiveTitansForPlayers(players.map(p => p.id));
+
     const game: Game = {
       gameMode: "1v1",
       gameState: "PreBattle",
       id: randomUUID(),
       players: players.map(p => p.id),
-      titans: {}
+      titans: titansMapping
     };
 
     this.games.set(game.id, game);

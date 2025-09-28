@@ -50,6 +50,8 @@ function App() {
     socket.onmessage = event => {
       const receivedEvent: AppEvent = JSON.parse(event.data);
 
+      console.log("Received event:", receivedEvent);
+
       if (receivedEvent.type === "reconnectFailed") {
         console.warn("Reconnect failed:", (receivedEvent as ReconnectFailedEvent).payload.reason);
         // clear persisted session so UI shows LoginForm
@@ -64,7 +66,13 @@ function App() {
         setSession(sessionPayload);
         setTitans(titans);
       } else if (receivedEvent.type === "gameStart") {
-        setGame((receivedEvent as GameStartEvent).payload.game);
+        const { game, titans } = (receivedEvent as GameStartEvent).payload;
+        if (titans) setTitans(titans);
+        setGame(game);
+      } else if (receivedEvent.type === "GameUpdate") {
+        const payload = receivedEvent.payload;
+        if (payload.titans) setTitans(payload.titans);
+        setGame(payload.game);
       } else if (receivedEvent.type === "lobbyUpdate") {
         setLobbyState((receivedEvent as LobbyUpdateEvent).payload);
       } else {
