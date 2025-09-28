@@ -1,4 +1,4 @@
-import { Box, OrbitControls, Plane } from "@react-three/drei";
+import { Box, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import type { GameAction, PlayerActionEvent } from "@shared/index";
 import { Button } from "@/components/ui/button";
@@ -61,9 +61,10 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
             shadow-mapSize-height={1024}
             shadow-mapSize-width={1024}
           />
-          <Plane args={[10, 10]} position={[0, -1, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-            <meshStandardMaterial attach="material" color="#777777" />
-          </Plane>
+          <mesh position={[0, -1, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[5, 64]} />
+            <meshStandardMaterial attach="material" color="#3cb043" roughness={0.8} />
+          </mesh>
           {/* player cube (left) - green */}
           <Box castShadow position={[-2, 0, 0]}>
             <meshStandardMaterial attach="material" color="green" />
@@ -72,7 +73,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           <Box castShadow position={[2, 0, 0]}>
             <meshStandardMaterial attach="material" color="red" />
           </Box>
-          <OrbitControls />
+          <OrbitControls maxPolarAngle={Math.PI / 2} minPolarAngle={0.2} />
         </Canvas>
       </div>
       <div className="flex justify-center gap-2 p-4">
