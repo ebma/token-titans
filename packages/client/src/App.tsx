@@ -1,6 +1,4 @@
-import { Box, OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
-import type { AppEvent, AuthResponseEvent } from "@shared/index";
+import type {AppEvent, AuthResponseEvent } from "@shared/index";
 import { useEffect, useState } from "react";
 import { LoginForm } from "./components/auth/LoginForm";
 import { Lobby } from "./components/lobby/Lobby";

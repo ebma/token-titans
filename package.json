@@ -17,7 +17,7 @@
   "private": true,
   "scripts": {
     "client": "bun --cwd packages/client run dev",
-    "dev": "concurrently -n 'backend,frontend' -c 'bgBlue.bold,bgGreen.bold' \"bun --cwd packages/server run dev\" \"bun --cwd packages/client run dev\"",
+    "dev": "concurrently -n 'backend,frontend' -c 'bgBlue.bold,bgGreen.bold' 'cd packages/server && bun run dev' 'cd packages/client && bun run dev'",
     "format": "biome check --write --unsafe --no-errors-on-unmatched",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
