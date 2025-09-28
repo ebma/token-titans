@@ -50,6 +50,9 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const playerHP = playerTitanId ? (hpMeta[playerTitanId] ?? playerTitan?.stats.HP ?? "-") : "-";
   const opponentHP = opponentTitanId ? (hpMeta[opponentTitanId] ?? opponentTitan?.stats.HP ?? "-") : "-";
 
+  const lockedPlayers = meta.lockedPlayers ?? {};
+  const opponentLocked = opponentPlayerId ? !!lockedPlayers[opponentPlayerId] : false;
+
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex-grow">
@@ -91,9 +94,9 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         </Canvas>
       </div>
       <div className="flex flex-col items-center gap-2 p-4">
-        <div className="flex items-center gap-4">
-          <div className="font-semibold">Round {roundNumber}</div>
-          <div className="text-muted-foreground text-sm">Opponent</div>
+        <div className="flex items-center gap-4 rounded-4xl bg-primary px-4">
+          <div className="font-semibold">Round #{roundNumber}</div>
+          <div className="text-sm">{opponentLocked ? "Opponent waiting" : "Opponent undecided"}</div>
         </div>
         <div className="flex justify-center gap-2">
           <Button

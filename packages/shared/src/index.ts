@@ -25,7 +25,7 @@ export type GameState = "Lobby" | "PreBattle" | "Battle" | "Finished";
 export type GameMode = "1v1" | "2v2";
 
 export type Game = {
-  meta: Partial<{
+  meta?: Partial<{
     roundLog: string[];
     roundNumber: number;
     lockedPlayers: Record<string, boolean>;
