@@ -1,26 +1,30 @@
 {
+  "devDependencies": {
+    "@biomejs/biome": "2.0.0",
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0"
+  },
+  "lint-staged": {
+    "*": [
+      "biome check --write --no-errors-on-unmatched --formatter-enabled=true --linter-enabled=false"
+    ],
+    "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [
+      "biome check --write --no-errors-on-unmatched --formatter-enabled=true --linter-enabled=false"
+    ]
+  },
   "name": "games-collection-monorepo",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
     "client": "bun --cwd packages/client run dev",
-    "server": "bun --cwd packages/server run dev",
-    "dev": "bash -lc \"(cd \"packages/server\" && bun run dev &) && (cd \"packages/client\" && bun run dev)\""
+    "dev": "concurrently -n 'backend,frontend' -c 'bgBlue.bold,bgGreen.bold' \"bun --cwd packages/server run dev\" \"bun --cwd packages/client run dev\"",
+    "format": "biome check --write --unsafe --no-errors-on-unmatched",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "server": "bun --cwd packages/server run dev"
   },
-  "dependencies": {
-    "@react-three/drei": "^10.7.6",
-    "@react-three/fiber": "^9.3.0",
-    "three": "^0.180.0",
-    "zustand": "^5.0.8"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.13",
-    "@tailwindcss/vite": "^4.1.13",
-    "@types/node": "^24.5.2",
-    "@types/three": "^0.180.0",
-    "tailwindcss": "^4",
-    "vite-tsconfig-paths": "^5.1.4"
-  }
+  "verify": "biome check --no-errors-on-unmatched",
+  "workspaces": [
+    "packages/*"
+  ]
 }
