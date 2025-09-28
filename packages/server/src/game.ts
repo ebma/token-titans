@@ -87,8 +87,6 @@ export class GameManager {
 
     // Attach lightweight ephemeral meta to the stored Game object for broadcasting.
     game.meta = {
-      lockedActions: {},
-      lockedPlayers: {},
       roundLog: [],
       roundNumber: 1,
       titanCharges: { ...titanChargeRecord },
@@ -122,8 +120,6 @@ export class GameManager {
     this.roundActions.set(gameId, {});
 
     game.meta = {
-      lockedActions: {},
-      lockedPlayers: {},
       roundLog: [],
       roundNumber: 1,
       titanCharges: { ...titanChargeRecord },
@@ -177,20 +173,7 @@ export class GameManager {
     this.roundActions.set(gameId, actions);
 
     // Mark this player as having locked in for the current round (for client visibility)
-    try {
-      const currentMeta = game.meta;
-      const currentLocked: Record<string, boolean> = { ...(currentMeta.lockedPlayers ?? {}) };
-      const currentLockedActions: Record<string, string> = { ...(currentMeta.lockedActions ?? {}) };
-      currentLocked[playerId] = true;
-      currentLockedActions[playerId] = action.type;
-      game.meta = {
-        ...currentMeta,
-        lockedActions: { ...currentLockedActions },
-        lockedPlayers: { ...currentLocked }
-      };
-    } catch {
-      // noop - meta is ephemeral and non-critical
-    }
+    // Server no longer tracks lockedPlayers/lockedActions on game.meta.
 
     // If all players have submitted actions, resolve simultaneously
     const allPlayersActed = game.players.every(pId => actions[pId] !== undefined);
@@ -352,8 +335,6 @@ export class GameManager {
     const startRound = ((game as any).meta?.roundNumber as number) ?? 1;
     const nextRound = game.gameState === "Finished" ? startRound : startRound + 1;
     game.meta = {
-      lockedActions: {},
-      lockedPlayers: {},
       roundLog,
       roundNumber: nextRound,
       titanCharges: { ...chargeRecord },

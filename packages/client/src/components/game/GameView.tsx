@@ -1,6 +1,7 @@
 import { Box, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import type { GameAction, PlayerActionEvent } from "@shared/index";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +13,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const game = useGameStore(state => state.game);
   const session = useAuthStore(state => state.session);
   const titans = useTitanStore(state => state.titans);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
   if (!game || !session) {
     return <div>Waiting for game to start...</div>;
@@ -43,10 +45,6 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const hpMeta: Record<string, number> = meta.titanHPs ?? {};
   const roundLog: string[] = meta.roundLog ?? [];
   const roundNumber = meta.roundNumber ?? 1;
-  const lockedPlayers: Record<string, boolean> = meta.lockedPlayers ?? {};
-  const lockedActions: Record<string, string> = meta.lockedActions ?? {};
-  const opponentLocked = opponentPlayerId ? !!lockedPlayers[opponentPlayerId] : false;
-  const selectedAction = lockedActions[session.userId];
   const playerCharge = playerTitanId ? (charges[playerTitanId] ?? 0) : 0;
   const opponentCharge = opponentTitanId ? (charges[opponentTitanId] ?? 0) : 0;
   const playerHP = playerTitanId ? (hpMeta[playerTitanId] ?? playerTitan?.stats.HP ?? "-") : "-";
@@ -95,41 +93,49 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
       <div className="flex flex-col items-center gap-2 p-4">
         <div className="flex items-center gap-4">
           <div className="font-semibold">Round {roundNumber}</div>
-          <div className="text-muted-foreground text-sm">{opponentLocked ? "Opponent locked" : "Opponent waiting"}</div>
+          <div className="text-muted-foreground text-sm">Opponent</div>
         </div>
         <div className="flex justify-center gap-2">
           <Button
             className={selectedAction === "Attack" ? "bg-indigo-600 text-white" : ""}
-            onClick={() =>
+            onClick={() => {
+              setSelectedAction("Attack");
               handleAction({
                 payload: { targetId: opponentPlayerId ?? "player2" },
                 type: "Attack"
-              })
-            }
+              });
+            }}
           >
             Attack
           </Button>
           <Button
             className={selectedAction === "Defend" ? "bg-indigo-600 text-white" : ""}
-            onClick={() => handleAction({ type: "Defend" })}
+            onClick={() => {
+              setSelectedAction("Defend");
+              handleAction({ type: "Defend" });
+            }}
           >
             Defend
           </Button>
           <Button
             className={selectedAction === "SpecialAbility" ? "bg-indigo-600 text-white" : ""}
             disabled={playerCharge < 100}
-            onClick={() =>
+            onClick={() => {
+              setSelectedAction("SpecialAbility");
               handleAction({
                 payload: { targetId: opponentPlayerId ?? "player2" },
                 type: "SpecialAbility"
-              })
-            }
+              });
+            }}
           >
             Special Ability
           </Button>
           <Button
             className={selectedAction === "Rest" ? "bg-indigo-600 text-white" : ""}
-            onClick={() => handleAction({ type: "Rest" })}
+            onClick={() => {
+              setSelectedAction("Rest");
+              handleAction({ type: "Rest" });
+            }}
           >
             Rest
           </Button>
