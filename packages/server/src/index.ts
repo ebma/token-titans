@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
-import { WebSocket, WebSocketServer } from "ws";
 import type {
   AppEvent,
   AuthRequestEvent,
@@ -10,8 +8,11 @@ import type {
   LobbyUpdateEvent,
   Player,
   PlayerActionEvent,
+  ReconnectFailedEvent,
   ReconnectRequestEvent
-} from "../../shared/src";
+} from "@shared/index";
+import { v4 as uuidv4 } from "uuid";
+import { WebSocket, WebSocketServer } from "ws";
 import { GameManager } from "./game";
 import { LobbyManager } from "./lobby";
 import { TitanManager } from "./titans";
@@ -164,7 +165,11 @@ wss.on("connection", function connection(ws: WebSocket) {
         }
       } else {
         console.log(`Invalid session ID received: ${sessionId}`);
-        // Optionally, send an error back to the client
+        const failureEvent: ReconnectFailedEvent = {
+          payload: { reason: "session_not_found" },
+          type: "reconnectFailed"
+        };
+        ws.send(JSON.stringify(failureEvent));
       }
     } else {
       console.log("received: %s", event.type);

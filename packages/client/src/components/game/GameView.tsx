@@ -79,8 +79,8 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
             {statsOrder.map(stat => (
               <TableRow key={stat as string}>
                 <TableHead>{stat}</TableHead>
-                <TableCell>{playerTitan ? (playerTitan.stats as any)[stat] : "-"}</TableCell>
-                <TableCell>{opponentTitan ? (opponentTitan.stats as any)[stat] : "-"}</TableCell>
+                <TableCell>{playerTitan ? playerTitan.stats[stat] : "-"}</TableCell>
+                <TableCell>{opponentTitan ? opponentTitan.stats[stat] : "-"}</TableCell>
               </TableRow>
             ))}
           </TableBody>

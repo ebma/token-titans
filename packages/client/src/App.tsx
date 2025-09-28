@@ -4,6 +4,7 @@ import type {
   GameStartEvent,
   LobbyInfoRequestEvent,
   LobbyUpdateEvent,
+  ReconnectFailedEvent,
   ReconnectRequestEvent
 } from "@shared/index";
 import { useEffect, useState } from "react";
@@ -19,7 +20,7 @@ import { useTitanStore } from "./hooks/useTitanStore";
 
 function App() {
   const [ws, setWs] = useState<WebSocket | null>(null);
-  const { session, setSession } = useAuthStore();
+  const { session, setSession, clearSession } = useAuthStore();
   const setTitans = useTitanStore(state => state.setTitans);
   const { game, setGame } = useGameStore();
   const { setLobbyState } = useLobbyStore();
@@ -49,6 +50,15 @@ function App() {
     socket.onmessage = event => {
       const receivedEvent: AppEvent = JSON.parse(event.data);
 
+      if (receivedEvent.type === "reconnectFailed") {
+        console.warn("Reconnect failed:", (receivedEvent as ReconnectFailedEvent).payload.reason);
+        // clear persisted session so UI shows LoginForm
+        clearSession();
+        // optionally clear titans as well
+        setTitans([]);
+        return;
+      }
+
       if (receivedEvent.type === "authResponse") {
         const { titans, ...sessionPayload } = (receivedEvent as AuthResponseEvent).payload;
         setSession(sessionPayload);
@@ -69,7 +79,7 @@ function App() {
     return () => {
       socket.close();
     };
-  }, [setSession, setGame, setLobbyState]);
+  }, [setSession, setGame, setLobbyState, clearSession, setTitans]);
 
   if (game) {
     return <GameView ws={ws} />;

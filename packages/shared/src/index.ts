@@ -62,6 +62,13 @@ export type ReconnectRequestEvent = {
   };
 };
 
+export type ReconnectFailedEvent = {
+  type: "reconnectFailed";
+  payload: {
+    reason?: string;
+  };
+};
+
 export type CreateGameRequestEvent = {
   type: "createGameRequest";
   payload: {
@@ -136,4 +143,5 @@ export type AppEvent =
   | CreateRoomRequestEvent
   | JoinRoomRequestEvent
   | ReconnectRequestEvent
+  | ReconnectFailedEvent
   | TitansUpdateEvent;
