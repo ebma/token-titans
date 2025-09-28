@@ -1,7 +1,7 @@
 import { Box, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import type { GameAction, PlayerActionEvent } from "@shared/index";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,6 +14,11 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const session = useAuthStore(state => state.session);
   const titans = useTitanStore(state => state.titans);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
+
+  // Reset selected action when a new round starts so the UI does not remain highlighted
+  useEffect(() => {
+    setSelectedAction(null);
+  }, [game?.meta?.roundNumber]);
 
   if (!game || !session) {
     return <div>Waiting for game to start...</div>;
