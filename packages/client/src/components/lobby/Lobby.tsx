@@ -1,20 +1,11 @@
-import type { CreateGameRequestEvent, Player, Room } from "@shared/index";
+import type { CreateGameRequestEvent } from "@shared/index";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/hooks/useAuthStore";
+import { useLobbyStore } from "@/hooks/useLobbyStore";
 import { CreateRoomDialog } from "./CreateRoomDialog";
 import { PlayerList } from "./PlayerList";
 import { RoomList } from "./RoomList";
-
-const samplePlayers: Player[] = [
-  { id: "1", status: "lobby", username: "PlayerOne" },
-  { id: "2", status: "in-game", username: "PlayerTwo" }
-];
-
-const sampleRooms: Room[] = [
-  { id: "1", maxPlayers: 2, name: "Room 1", players: ["1"] },
-  { id: "2", maxPlayers: 4, name: "Room 2", players: [] }
-];
 
 type LobbyProps = {
   ws: WebSocket | null;
@@ -22,6 +13,7 @@ type LobbyProps = {
 
 export function Lobby({ ws }: LobbyProps) {
   const { session } = useAuthStore();
+  const { players, rooms } = useLobbyStore();
 
   const handleStartGame = () => {
     if (ws && session) {
@@ -47,7 +39,7 @@ export function Lobby({ ws }: LobbyProps) {
               <CardTitle>Players</CardTitle>
             </CardHeader>
             <CardContent>
-              <PlayerList players={samplePlayers} />
+              <PlayerList players={players} />
             </CardContent>
           </Card>
         </div>
@@ -56,11 +48,11 @@ export function Lobby({ ws }: LobbyProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Game Rooms</CardTitle>
-                <CreateRoomDialog />
+                <CreateRoomDialog ws={ws} />
               </div>
             </CardHeader>
             <CardContent>
-              <RoomList rooms={sampleRooms} />
+              <RoomList rooms={rooms} />
             </CardContent>
           </Card>
           <Button onClick={handleStartGame}>Start Game</Button>

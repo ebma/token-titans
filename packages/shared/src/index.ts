@@ -83,10 +83,33 @@ export type GameEvent =
   | { type: "ActionRequest"; payload: { playerId: string } }
   | { type: "ActionResponse"; payload: { playerId: string; action: GameAction } };
 
+export type LobbyInfoRequestEvent = {
+  type: "lobbyInfoRequest";
+};
+
+export type LobbyUpdateEvent = {
+  type: "lobbyUpdate";
+  payload: {
+    players: Player[];
+    rooms: Room[];
+  };
+};
+
+export type CreateRoomRequestEvent = {
+  type: "createRoomRequest";
+  payload: {
+    name: string;
+    maxPlayers: number;
+  };
+};
+
 export type AppEvent =
   | GameEvent
   | AuthRequestEvent
   | AuthResponseEvent
   | CreateGameRequestEvent
   | GameStartEvent
-  | PlayerActionEvent;
+  | PlayerActionEvent
+  | LobbyInfoRequestEvent
+  | LobbyUpdateEvent
+  | CreateRoomRequestEvent;
