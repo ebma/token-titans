@@ -25,7 +25,14 @@ export type GameState = "Lobby" | "PreBattle" | "Battle" | "Finished";
 export type GameMode = "1v1" | "2v2";
 
 export type Game = {
-  meta?: { roundLog: string[]; titanCharges: { [p: string]: number }; titanHPs: { [p: string]: number } };
+  meta: Partial<{
+    roundLog: string[];
+    roundNumber: number;
+    lockedPlayers: Record<string, boolean>;
+    lockedActions: Record<string, string>;
+    titanCharges: { [p: string]: number };
+    titanHPs: { [p: string]: number };
+  }>;
   id: string;
   players: string[];
   titans: Record<string, string>; // PlayerID to TitanID

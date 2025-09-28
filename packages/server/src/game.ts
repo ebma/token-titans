@@ -87,7 +87,10 @@ export class GameManager {
 
     // Attach lightweight ephemeral meta to the stored Game object for broadcasting.
     game.meta = {
+      lockedActions: {},
+      lockedPlayers: {},
       roundLog: [],
+      roundNumber: 1,
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
     };
@@ -119,7 +122,10 @@ export class GameManager {
     this.roundActions.set(gameId, {});
 
     game.meta = {
+      lockedActions: {},
+      lockedPlayers: {},
       roundLog: [],
+      roundNumber: 1,
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
     };
@@ -169,6 +175,22 @@ export class GameManager {
     const actions = this.roundActions.get(gameId) ?? {};
     actions[playerId] = action;
     this.roundActions.set(gameId, actions);
+
+    // Mark this player as having locked in for the current round (for client visibility)
+    try {
+      const currentMeta = game.meta;
+      const currentLocked: Record<string, boolean> = { ...(currentMeta.lockedPlayers ?? {}) };
+      const currentLockedActions: Record<string, string> = { ...(currentMeta.lockedActions ?? {}) };
+      currentLocked[playerId] = true;
+      currentLockedActions[playerId] = action.type;
+      game.meta = {
+        ...currentMeta,
+        lockedActions: { ...currentLockedActions },
+        lockedPlayers: { ...currentLocked }
+      };
+    } catch {
+      // noop - meta is ephemeral and non-critical
+    }
 
     // If all players have submitted actions, resolve simultaneously
     const allPlayersActed = game.players.every(pId => actions[pId] !== undefined);
@@ -326,8 +348,14 @@ export class GameManager {
     this.titanCharges.set(gameId, chargeRecord);
 
     // Update ephemeral meta on the game object so handlers can broadcast it, include roundLog
+    // Advance the round number only when the game continues; reset lockedPlayers for the next round.
+    const startRound = ((game as any).meta?.roundNumber as number) ?? 1;
+    const nextRound = game.gameState === "Finished" ? startRound : startRound + 1;
     game.meta = {
+      lockedActions: {},
+      lockedPlayers: {},
       roundLog,
+      roundNumber: nextRound,
       titanCharges: { ...chargeRecord },
       titanHPs: { ...hpRecord }
     };
