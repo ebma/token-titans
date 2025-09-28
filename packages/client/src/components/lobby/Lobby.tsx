@@ -43,7 +43,6 @@ export function Lobby({ ws }: LobbyProps) {
           </Card>
         </div>
         <div className="flex flex-col gap-6 md:col-span-2">
-          {currentRoom && <CurrentRoom players={players} room={currentRoom} ws={ws} />}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -55,6 +54,7 @@ export function Lobby({ ws }: LobbyProps) {
               <RoomList rooms={rooms} ws={ws} />
             </CardContent>
           </Card>
+          {currentRoom && <CurrentRoom players={players} room={currentRoom} ws={ws} />}
         </div>
       </main>
     </div>
