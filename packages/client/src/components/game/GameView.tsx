@@ -39,14 +39,39 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex-grow">
-        <Canvas fallback={<div>Sorry no WebGL supported!</div>} style={{ height: 400 }}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[0, 10, 5]} />
-          <Plane args={[10, 10]} position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <meshStandardMaterial attach="material" color="lightblue" />
+        <Canvas
+          camera={{ fov: 50, position: [0, 5, 8] }}
+          fallback={<div>Sorry no WebGL supported!</div>}
+          shadows
+          style={{ height: 400 }}
+        >
+          <ambientLight intensity={0.3} />
+          {/* top directional light that casts shadows onto the plane */}
+          <directionalLight
+            castShadow
+            intensity={1}
+            position={[0, 10, 5]}
+            // shadow quality and camera bounds for the directional light
+            shadow-camera-bottom={-10}
+            shadow-camera-far={50}
+            shadow-camera-left={-10}
+            shadow-camera-near={0.5}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-mapSize-height={1024}
+            shadow-mapSize-width={1024}
+          />
+          <Plane args={[10, 10]} position={[0, -1, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+            <meshStandardMaterial attach="material" color="#777777" />
           </Plane>
-          <Box position={[-2, 0, 0]} />
-          <Box position={[2, 0, 0]} />
+          {/* player cube (left) - green */}
+          <Box castShadow position={[-2, 0, 0]}>
+            <meshStandardMaterial attach="material" color="green" />
+          </Box>
+          {/* enemy cube (right) - red */}
+          <Box castShadow position={[2, 0, 0]}>
+            <meshStandardMaterial attach="material" color="red" />
+          </Box>
           <OrbitControls />
         </Canvas>
       </div>
