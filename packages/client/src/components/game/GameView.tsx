@@ -73,7 +73,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           <Box castShadow position={[2, 0, 0]}>
             <meshStandardMaterial attach="material" color="red" />
           </Box>
-          <OrbitControls maxPolarAngle={Math.PI / 2} minPolarAngle={0.2} />
+          <OrbitControls maxDistance={6} maxPolarAngle={Math.PI / 2} minDistance={4} minPolarAngle={0.2} />
         </Canvas>
       </div>
       <div className="flex justify-center gap-2 p-4">
