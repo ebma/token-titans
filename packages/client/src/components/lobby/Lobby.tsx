@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { useLobbyStore } from "@/hooks/useLobbyStore";
+import { useTitanStore } from "@/hooks/useTitanStore";
 import { CreateRoomDialog } from "./CreateRoomDialog";
 import { CurrentRoom } from "./CurrentRoom";
 import { PlayerList } from "./PlayerList";
 import { RoomList } from "./RoomList";
+import TitanList from "./TitanList";
 
 type LobbyProps = {
   ws: WebSocket | null;
@@ -29,6 +31,14 @@ export function Lobby({ ws }: LobbyProps) {
             </CardHeader>
             <CardContent>
               <PlayerList players={players} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Titans</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TitanList titans={useTitanStore(s => s.titans)} />
             </CardContent>
           </Card>
         </div>

@@ -11,12 +11,12 @@ export type Room = {
   maxPlayers: number;
 };
 
-export type AssetStat = "HP" | "Attack" | "Defense" | "Speed" | "Stamina";
+export type TitanStat = "HP" | "Attack" | "Defense" | "Speed" | "Stamina";
 
-export type Asset = {
+export type Titan = {
   id: string;
   name: string;
-  stats: Record<AssetStat, number>;
+  stats: Record<TitanStat, number>;
   specialAbility: string;
 };
 
@@ -27,7 +27,7 @@ export type GameMode = "1v1" | "2v2";
 export type Game = {
   id: string;
   players: string[];
-  assets: Record<string, string>; // PlayerID to AssetID
+  titans: Record<string, string>; // PlayerID to TitanID
   gameState: GameState;
   gameMode: GameMode;
 };
@@ -51,6 +51,7 @@ export type AuthResponseEvent = {
     sessionId: string;
     userId: string;
     username: string;
+    titans: Titan[];
   };
 };
 
@@ -116,6 +117,13 @@ export type JoinRoomRequestEvent = {
   };
 };
 
+export type TitansUpdateEvent = {
+  type: "titansUpdate";
+  payload: {
+    titans: Titan[];
+  };
+};
+
 export type AppEvent =
   | GameEvent
   | AuthRequestEvent
@@ -127,4 +135,5 @@ export type AppEvent =
   | LobbyUpdateEvent
   | CreateRoomRequestEvent
   | JoinRoomRequestEvent
-  | ReconnectRequestEvent;
+  | ReconnectRequestEvent
+  | TitansUpdateEvent;

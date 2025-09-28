@@ -6,11 +6,11 @@ export class GameManager {
 
   createGame(players: { id: string; username: string }[]): Game {
     const game: Game = {
-      assets: {},
       gameMode: "1v1",
       gameState: "PreBattle",
       id: randomUUID(),
-      players: players.map(p => p.id)
+      players: players.map(p => p.id),
+      titans: {}
     };
 
     this.games.set(game.id, game);

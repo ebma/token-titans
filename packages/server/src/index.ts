@@ -14,6 +14,9 @@ import type {
 } from "../../shared/src";
 import { GameManager } from "./game";
 import { LobbyManager } from "./lobby";
+import { TitanManager } from "./titans";
+
+const titanManager = new TitanManager();
 
 const port = Number.parseInt(process.env.PORT || "4000", 10);
 
@@ -58,8 +61,11 @@ wss.on("connection", function connection(ws: WebSocket) {
       sessions.set(sessionId, { userId, username });
       lobbyManager.addPlayer(newPlayer);
 
+      // Generate initial titan for the player
+      titanManager.generateInitialTitan(userId);
+      const titans = titanManager.getTitansForPlayer(userId);
       const response: AuthResponseEvent = {
-        payload: { sessionId, userId, username },
+        payload: { sessionId, titans, userId, username },
         type: "authResponse"
       };
       ws.send(JSON.stringify(response));
@@ -135,8 +141,11 @@ wss.on("connection", function connection(ws: WebSocket) {
         }
 
         // Send auth response
+        // Generate initial titan for the player (if not present)
+        titanManager.generateInitialTitan(userId);
+        const titans = titanManager.getTitansForPlayer(userId);
         const authResponse: AuthResponseEvent = {
-          payload: { sessionId, userId, username },
+          payload: { sessionId, titans, userId, username },
           type: "authResponse"
         };
         ws.send(JSON.stringify(authResponse));

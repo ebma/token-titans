@@ -15,9 +15,12 @@ import { useAuthStore } from "./hooks/useAuthStore";
 import { useGameStore } from "./hooks/useGameStore";
 import { useLobbyStore } from "./hooks/useLobbyStore";
 
+import { useTitanStore } from "./hooks/useTitanStore";
+
 function App() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const { session, setSession } = useAuthStore();
+  const setTitans = useTitanStore(state => state.setTitans);
   const { game, setGame } = useGameStore();
   const { setLobbyState } = useLobbyStore();
 
@@ -47,7 +50,9 @@ function App() {
       const receivedEvent: AppEvent = JSON.parse(event.data);
 
       if (receivedEvent.type === "authResponse") {
-        setSession((receivedEvent as AuthResponseEvent).payload);
+        const { titans, ...sessionPayload } = (receivedEvent as AuthResponseEvent).payload;
+        setSession(sessionPayload);
+        setTitans(titans);
       } else if (receivedEvent.type === "gameStart") {
         setGame((receivedEvent as GameStartEvent).payload.game);
       } else if (receivedEvent.type === "lobbyUpdate") {
