@@ -1,5 +1,6 @@
 import type { AppEvent, AuthResponseEvent, GameStartEvent, LobbyInfoRequestEvent, LobbyUpdateEvent } from "@shared/index";
 import { useEffect, useState } from "react";
+import { WEB_SERVER_URL } from "@/lib/constants.ts";
 import { LoginForm } from "./components/auth/LoginForm";
 import { GameView } from "./components/game/GameView";
 import { Lobby } from "./components/lobby/Lobby";
@@ -14,7 +15,7 @@ function App() {
   const { setLobbyState } = useLobbyStore();
 
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:4000");
+    const socket = new WebSocket(WEB_SERVER_URL);
     setWs(socket);
 
     socket.onopen = () => {
