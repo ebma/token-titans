@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { useGameStore } from "@/hooks/useGameStore";
 import { useTitanStore } from "@/hooks/useTitanStore";
@@ -158,7 +159,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
       <div className="mt-2 mb-1 text-sm">
         <div>
           Selected Ability: <span className="font-semibold">{selectedAbility.name}</span>{" "}
-          <span className="text-muted">({selectedAbility.cost}%)</span>
+          <span className="text-primary">({selectedAbility.cost}%)</span>
         </div>
         <div className="mt-1 flex flex-wrap gap-3">
           {abilities.map((ab: TitanAbility, idx: number) => (
@@ -169,11 +170,17 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
             >
               <input checked={selIdx === idx} name="ability" onChange={() => setSelectedAbilityIndex(idx)} type="radio" />
               <span>
-                {ab.name} <span className="text-muted">({ab.cost}%)</span>
-                {/* add explicit hoverable info so descriptions are discoverable even if the label layout changes */}
-                <span aria-hidden className="ml-1 text-xs text-muted" title={ab.description ?? ""}>
-                  ⓘ
-                </span>
+                {ab.name} <span className="text-primary">({ab.cost}%)</span>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span aria-hidden className="ml-1 cursor-help text-primary text-xs">
+                      ⓘ
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>
+                    <div className="max-w-xs whitespace-normal break-words text-sm">{ab.description ?? "No description"}</div>
+                  </TooltipContent>
+                </Tooltip>
               </span>
             </label>
           ))}

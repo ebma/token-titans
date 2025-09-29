@@ -68,25 +68,15 @@ function App() {
       } else if (receivedEvent.type === "gameStart") {
         const { game, titans } = (receivedEvent as GameStartEvent).payload;
         if (titans) {
-          if (session?.userId && game?.titans && game.titans[session.userId]) {
-            const myTitanIds = new Set(game.titans[session.userId]);
-            const filteredTitans = titans.filter(t => myTitanIds.has(t.id));
-            setTitans(filteredTitans);
-          } else {
-            setTitans(titans);
-          }
+          // Always store the full titan list from the server so UI can display both player and opponent stats.
+          setTitans(titans);
         }
         setGame(game);
       } else if (receivedEvent.type === "GameUpdate") {
         const payload = receivedEvent.payload;
         if (payload.titans) {
-          if (session?.userId && payload.game?.titans && payload.game.titans[session.userId]) {
-            const myTitanIds = new Set(payload.game.titans[session.userId]);
-            const filteredTitans = payload.titans.filter(t => myTitanIds.has(t.id));
-            setTitans(filteredTitans);
-          } else {
-            setTitans(payload.titans);
-          }
+          // Always store the full titan list from GameUpdate payloads.
+          setTitans(payload.titans);
         }
         setGame(payload.game);
       } else if (receivedEvent.type === "lobbyUpdate") {
@@ -103,7 +93,7 @@ function App() {
     return () => {
       socket.close();
     };
-  }, [setSession, setGame, setLobbyState, clearSession, setTitans, session?.userId]);
+  }, [setSession, setGame, setLobbyState, clearSession, setTitans]);
 
   const content = useMemo(() => {
     if (game) {
