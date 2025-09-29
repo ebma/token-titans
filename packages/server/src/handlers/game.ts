@@ -1,4 +1,4 @@
-import type { CreateGameRequestEvent, GameEvent, GameStartEvent, Player, PlayerActionEvent, Titan } from "@shared/index";
+import type { CreateGameRequestEvent, Game, GameEvent, GameStartEvent, Player, PlayerActionEvent, Titan } from "@shared/index";
 import { WebSocket } from "ws";
 import { ServerContext } from "../serverContext";
 
@@ -38,8 +38,25 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
   const titanIds = Object.values(game.titans || {});
   const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
 
+  // Build lightweight titanAbilities mapping for clients (id, name, cost). Cost may be unknown here so default to 100.
+  const titanAbilities: Record<string, { id: string; name: string; cost: number }> = {};
+  for (const t of titans) {
+    const abilityId = (t as any).abilities?.[0];
+    titanAbilities[t.id] = {
+      cost: 100,
+      id: abilityId ?? "none",
+      name: (t as any).specialAbility ?? abilityId ?? "None"
+    };
+  }
+
+  // Ensure game.meta includes titanAbilities so clients can render ability UI
+  const gameToSend = {
+    ...game,
+    ...((game as any).meta ? { meta: { ...(game as any).meta, titanAbilities } } : { meta: { titanAbilities } })
+  } as unknown as Game;
+
   const gameStartEvent: GameStartEvent = {
-    payload: { game, titans },
+    payload: { game: gameToSend, titans },
     type: "gameStart"
   };
 

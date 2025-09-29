@@ -119,6 +119,26 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           <div className="font-semibold">Round #{roundNumber}</div>
           <div className="text-sm">{opponentLocked ? "Opponent waiting" : "Opponent undecided"}</div>
         </div>
+        {/* Ability info (from server meta if available) */}
+        <div className="mt-2 mb-1 text-sm">
+          {(() => {
+            const titanAbilitiesMeta =
+              (
+                meta as unknown as {
+                  titanAbilities?: Record<string, { id: string; name: string; cost: number }>;
+                }
+              ).titanAbilities ?? {};
+            const playerAbility = playerTitanId
+              ? (titanAbilitiesMeta[playerTitanId] ?? { cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" })
+              : { cost: 100, id: "none", name: "None" };
+            return (
+              <div>
+                Ability: <span className="font-semibold">{playerAbility.name}</span>{" "}
+                <span className="text-muted">({playerAbility.cost}%)</span>
+              </div>
+            );
+          })()}
+        </div>
         <div className="flex justify-center gap-2">
           <Button
             className={selectedAction === "Attack" ? "bg-indigo-600 text-white" : ""}
@@ -143,7 +163,18 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           </Button>
           <Button
             className={selectedAction === "SpecialAbility" ? "bg-indigo-600 text-white" : ""}
-            disabled={playerCharge < 100}
+            disabled={(() => {
+              const titanAbilitiesMeta =
+                (
+                  meta as unknown as {
+                    titanAbilities?: Record<string, { id: string; name: string; cost: number }>;
+                  }
+                ).titanAbilities ?? {};
+              const playerAbility = playerTitanId
+                ? (titanAbilitiesMeta[playerTitanId] ?? { cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" })
+                : { cost: 100, id: "none", name: "None" };
+              return playerCharge < (playerAbility.cost ?? 100);
+            })()}
             onClick={() => {
               setSelectedAction("SpecialAbility");
               handleAction({

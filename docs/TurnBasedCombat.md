@@ -30,8 +30,10 @@ Attack damage calculation:
 - HP update: $newHP = \text{Math.round}(\max(0, oldHP - damage))$; HP is clamped to >= 0.
 
 SpecialAbility:
-- Can only be used when titan's charge === 100; the server ignores SpecialAbility submissions when charge < 100.
-- Effect: deterministic damage = $Attack * 2$; after use, attacker's charge is reset to 0.
+- Abilities are now data-driven per-titan. Each titan starts with one random ability assigned when generated.
+- SpecialAbility submissions are validated by the server against the ability's cost. Using an ability deducts that ability's cost from the titan's current charge (charges are not automatically reset to 0 unless the ability does so).
+- Example simple abilities include heals, damage multipliers, shields, charge gain, and debuffs. Costs vary (typically 5–50). See server ABILITIES implementation in [`packages/server/src/abilities.ts`](packages/server/src/abilities.ts:1).
+- The server will ignore SpecialAbility submissions if the titan's current charge is less than the ability's cost.
 
 Defend:
 - No immediate HP change by itself; it raises effective defense via the multiplier above.
@@ -43,7 +45,7 @@ Rest:
 Charge tracking & bookkeeping:
 - Server tracks per-game integer titanCharges (0–100). Charges are rounded and clamped to [0,100].
 - Per-game bookkeeping: roundActions (playerId -> GameAction), titanHPs, titanCharges, gameTitans for stats.
-- game.meta (ephemeral) includes roundLog (human messages), roundNumber, titanHPs, titanCharges and is broadcast to clients (it does not expose opponent-internal action details).
+- game.meta (ephemeral) includes roundLog (human messages), roundNumber, titanHPs, titanCharges, and titanAbilities mapping and is broadcast to clients (it does not expose opponent-internal action details).
 
 Edge cases:
 - SpecialAbility validated on submit; invalid usage is ignored.

@@ -1,5 +1,6 @@
 import type { Game, GameAction, Titan } from "@shared/index";
 import { randomUUID } from "crypto";
+import { ABILITIES } from "./abilities";
 
 /**
  * GameManager now tracks per-game ephemeral state:
@@ -86,10 +87,22 @@ export class GameManager {
     this.roundActions.set(game.id, {});
 
     // Attach lightweight ephemeral meta to the stored Game object for broadcasting.
-    game.meta = {
+    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }> = {};
+    for (const tid of Object.keys(titanRecord)) {
+      const t = titanRecord[tid];
+      const abilityId = (t as any).abilities?.[0];
+      const ability = abilityId ? ABILITIES[abilityId] : undefined;
+      titanAbilitiesMap[tid] = {
+        cost: ability?.cost ?? 100,
+        id: abilityId ?? "none",
+        name: ability?.name ?? (t as any).specialAbility ?? "None"
+      };
+    }
+    (game as any).meta = {
       lockedPlayers: {},
       roundLog: [],
       roundNumber: 1,
+      titanAbilities: titanAbilitiesMap,
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
     };
@@ -120,10 +133,23 @@ export class GameManager {
     this.gameTitans.set(gameId, titanRecord);
     this.roundActions.set(gameId, {});
 
-    game.meta = {
+    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }> = {};
+    for (const tid of Object.keys(titanRecord)) {
+      const t = titanRecord[tid];
+      const abilityId = (t as any).abilities?.[0];
+      const ability = abilityId ? ABILITIES[abilityId] : undefined;
+      titanAbilitiesMap[tid] = {
+        cost: ability?.cost ?? 100,
+        id: abilityId ?? "none",
+        name: ability?.name ?? (t as any).specialAbility ?? "None"
+      };
+    }
+
+    (game as any).meta = {
       lockedPlayers: {},
       roundLog: [],
       roundNumber: 1,
+      titanAbilities: titanAbilitiesMap,
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
     };
@@ -163,10 +189,17 @@ export class GameManager {
     const charges = this.titanCharges.get(gameId)!;
     const currentCharge = charges[titanId] ?? 0;
 
-    // Validate SpecialAbility usage
-    if (action.type === "SpecialAbility" && currentCharge < 100) {
-      // Ignore the player's choice, return current game state (so clients receive updated info)
-      return game;
+    // Validate SpecialAbility usage against titan's ability cost
+    if (action.type === "SpecialAbility") {
+      const titansForGame = this.gameTitans.get(gameId) ?? {};
+      const titanObj = titansForGame[titanId];
+      const abilityId = (titanObj as any).abilities?.[0];
+      const ability = abilityId ? ABILITIES[abilityId] : undefined;
+      const cost = ability?.cost ?? 100;
+      if (currentCharge < cost) {
+        // Ignore the player's choice, return current game state (so clients receive updated info)
+        return game;
+      }
     }
 
     // Store action for the round
@@ -205,6 +238,10 @@ export class GameManager {
 
     // Prepare round log
     const roundLog: string[] = [];
+
+    // Prepare temporary shields and speed modifiers for this resolution
+    const shields: Record<string, number> = {};
+    const tempSpeedModifiers: Record<string, number> = {};
 
     // Log choices (locked before resolving)
     for (const player of game.players) {
@@ -267,7 +304,17 @@ export class GameManager {
         const defenderBaseDef = defenderTitan?.stats.Defense ?? 0;
         const defMultiplier = defenderAction?.type === "Defend" ? 1.5 + Math.random() * 0.5 : 1; // Between 1.5 and 2.0
         const effectiveDef = defenderBaseDef * defMultiplier;
-        const damage = Math.max(0, attackValue - effectiveDef);
+        const damageRaw = Math.max(0, attackValue - effectiveDef);
+
+        // Apply shields if present
+        let damage = Math.round(damageRaw);
+        const shieldAmt = shields[defenderTitanId] ?? 0;
+        if (shieldAmt > 0 && damage > 0) {
+          const absorbed = Math.min(shieldAmt, damage);
+          shields[defenderTitanId] = Math.max(0, Math.round(shieldAmt - absorbed));
+          damage = Math.max(0, Math.round(damage - absorbed));
+          roundLog.push(`${defenderTitan?.name ?? defenderTitanId}'s shield absorbs ${Math.round(absorbed)} damage.`);
+        }
 
         const beforeHP = hpRecord[defenderTitanId] ?? 0;
         const afterHP = Math.round(Math.max(0, beforeHP - damage));
@@ -295,23 +342,45 @@ export class GameManager {
           break;
         }
       } else if (act.type === "SpecialAbility") {
-        // Only reachable when charge was validated earlier
-        const damage = (attackerTitan?.stats.Attack ?? 0) * 2;
-        const beforeHP = hpRecord[defenderTitanId] ?? 0;
-        const afterHP = Math.round(Math.max(0, beforeHP - damage));
-        hpRecord[defenderTitanId] = afterHP;
+        // Resolve special ability by looking up titan's assigned ability
+        const titansForGame = this.gameTitans.get(gameId) ?? {};
+        const titanObj = titansForGame[attackerTitanId];
+        const abilityId = (titanObj as any).abilities?.[0];
+        const ability = abilityId ? ABILITIES[abilityId] : undefined;
 
-        // reset attacker's charge to 0
-        chargeRecord[attackerTitanId] = 0;
+        if (!ability) {
+          roundLog.push(`${attackerTitan?.name ?? attackerTitanId} attempted SpecialAbility but no ability found.`);
+          continue;
+        }
 
-        roundLog.push(`${attackerTitan?.name ?? attackerTitanId} uses SpecialAbility dealing ${Math.round(damage)} damage.`);
+        const cost = ability.cost ?? 100;
+        if ((chargeRecord[attackerTitanId] ?? 0) < cost) {
+          roundLog.push(`${attackerTitan?.name ?? attackerTitanId} attempted ${ability.name} but has insufficient charge.`);
+          continue;
+        }
 
-        roundLog.push(
-          `${attackerTitan?.name ?? attackerTitanId} deals ${Math.round(damage)} damage to ${defenderTitan?.name ?? defenderTitanId} (HP: ${Math.round(
-            beforeHP
-          )} -> ${afterHP}).`
-        );
+        // Deduct cost (do not reset to 0)
+        chargeRecord[attackerTitanId] = Math.max(0, Math.round((chargeRecord[attackerTitanId] ?? 0) - cost));
 
+        // Call ability apply which will mutate hpRecord/chargeRecord/shields/tempSpeedModifiers and append to roundLog
+        try {
+          ability.apply({
+            attackerId: attackerTitanId,
+            attackerTitan,
+            chargeRecord,
+            defenderId: defenderTitanId,
+            defenderTitan,
+            hpRecord,
+            roundLog,
+            shields,
+            tempSpeedModifiers
+          });
+        } catch (e) {
+          roundLog.push(`${attackerTitan?.name ?? attackerTitanId} failed to use ${ability.name}.`);
+        }
+
+        // Check if defender died as a result
+        const afterHP = hpRecord[defenderTitanId] ?? 0;
         if (afterHP <= 0) {
           game.gameState = "Finished";
           roundLog.push(`${defenderTitan?.name ?? defenderTitanId} is defeated — ${defender} wins.`);
@@ -341,9 +410,24 @@ export class GameManager {
     // Advance the round number only when the game continues; reset lockedPlayers for the next round.
     const startRound = (game.meta?.roundNumber as number) ?? 1;
     const nextRound = game.gameState === "Finished" ? startRound : startRound + 1;
-    game.meta = {
+    // Build titanAbilities mapping for meta
+    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }> = {};
+    const titansForGameFinal = this.gameTitans.get(gameId) ?? {};
+    for (const tid of Object.keys(titansForGameFinal)) {
+      const t = titansForGameFinal[tid];
+      const abilityId = (t as any).abilities?.[0];
+      const ability = abilityId ? ABILITIES[abilityId] : undefined;
+      titanAbilitiesMap[tid] = {
+        cost: ability?.cost ?? 100,
+        id: abilityId ?? "none",
+        name: ability?.name ?? (t as any).specialAbility ?? "None"
+      };
+    }
+
+    (game as any).meta = {
       roundLog,
       roundNumber: nextRound,
+      titanAbilities: titanAbilitiesMap,
       titanCharges: { ...chargeRecord },
       titanHPs: { ...hpRecord }
     };
