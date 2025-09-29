@@ -67,11 +67,27 @@ function App() {
         setTitans(titans);
       } else if (receivedEvent.type === "gameStart") {
         const { game, titans } = (receivedEvent as GameStartEvent).payload;
-        if (titans) setTitans(titans);
+        if (titans) {
+          if (session?.userId && game?.titans && game.titans[session.userId]) {
+            const myTitanIds = new Set(game.titans[session.userId]);
+            const filteredTitans = titans.filter(t => myTitanIds.has(t.id));
+            setTitans(filteredTitans);
+          } else {
+            setTitans(titans);
+          }
+        }
         setGame(game);
       } else if (receivedEvent.type === "GameUpdate") {
         const payload = receivedEvent.payload;
-        if (payload.titans) setTitans(payload.titans);
+        if (payload.titans) {
+          if (session?.userId && payload.game?.titans && payload.game.titans[session.userId]) {
+            const myTitanIds = new Set(payload.game.titans[session.userId]);
+            const filteredTitans = payload.titans.filter(t => myTitanIds.has(t.id));
+            setTitans(filteredTitans);
+          } else {
+            setTitans(payload.titans);
+          }
+        }
         setGame(payload.game);
       } else if (receivedEvent.type === "lobbyUpdate") {
         setLobbyState((receivedEvent as LobbyUpdateEvent).payload);
