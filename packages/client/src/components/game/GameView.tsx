@@ -10,6 +10,16 @@ import { useAuthStore } from "@/hooks/useAuthStore";
 import { useGameStore } from "@/hooks/useGameStore";
 import { useTitanStore } from "@/hooks/useTitanStore";
 
+/**
+ * Local helper type for ability metadata exposed by the server.
+ */
+type TitanAbility = {
+  id: string;
+  name: string;
+  cost: number;
+  description?: string;
+};
+
 export function GameView({ ws }: { ws: WebSocket | null }) {
   const game = useGameStore(state => state.game);
   const setGame = useGameStore(state => state.setGame);
@@ -63,22 +73,37 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const lockedPlayers = meta.lockedPlayers ?? {};
   const opponentLocked = opponentPlayerId ? lockedPlayers[opponentPlayerId] : false;
 
-  // Compute abilities once and reuse
-  const abilities = useMemo(() => {
-    const titanAbilitiesMeta =
-      (
-        meta as unknown as {
-          titanAbilities?: Record<string, { id: string; name: string; cost: number; description?: string }[]>;
-        }
-      ).titanAbilities ?? {};
-    let abs = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
+  // Compute abilities once and reuse. Prefer server-provided meta.titanAbilities (contains descriptions).
+  const abilities = useMemo<TitanAbility[]>(() => {
+    const titanAbilitiesMeta = (meta as { titanAbilities?: Record<string, TitanAbility[]> }).titanAbilities ?? {};
+    let abs: TitanAbility[] = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
+
+    // If server didn't provide ability meta for this titan, build a minimal fallback from the titan object
     if (!abs || abs.length === 0) {
-      abs = playerTitanId
-        ? [{ cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" }]
-        : [{ cost: 100, id: "none", name: "None" }];
+      const fallback: TitanAbility[] = (playerTitan?.abilities?.map((aid: string, idx: number) => {
+        // We don't have the full ABILITIES registry on the client, so expose a minimal fallback.
+        return {
+          cost: 100,
+          description: "",
+          id: aid ?? `ability-${idx}`,
+          name: playerTitan?.specialAbility ?? "Special"
+        } as TitanAbility;
+      }) ?? []) as TitanAbility[];
+
+      abs =
+        fallback.length > 0
+          ? fallback
+          : playerTitanId
+            ? [{ cost: 100, description: "", id: "none", name: playerTitan?.specialAbility ?? "None" }]
+            : [{ cost: 100, description: "", id: "none", name: "None" }];
     }
+
     return abs;
-  }, [meta, playerTitanId, playerTitan?.specialAbility]);
+  }, [meta, playerTitanId, playerTitan?.specialAbility, playerTitan?.abilities]);
+
+  // expose stat objects for safer indexing in the table
+  const playerStats = useMemo<Record<string, number | string>>(() => playerTitan?.stats ?? {}, [playerTitan]);
+  const opponentStats = useMemo<Record<string, number | string>>(() => opponentTitan?.stats ?? {}, [opponentTitan]);
 
   // Scene / Canvas (static)
   const SceneCanvas = useMemo(
@@ -130,7 +155,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           <span className="text-muted">({selectedAbility.cost}%)</span>
         </div>
         <div className="mt-1 flex flex-wrap gap-3">
-          {abilities.map((ab, idx) => (
+          {abilities.map((ab: TitanAbility, idx: number) => (
             <label
               className="inline-flex cursor-pointer select-none items-center gap-2 text-sm"
               key={ab.id + "-" + idx}
@@ -139,6 +164,10 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
               <input checked={selIdx === idx} name="ability" onChange={() => setSelectedAbilityIndex(idx)} type="radio" />
               <span>
                 {ab.name} <span className="text-muted">({ab.cost}%)</span>
+                {/* add explicit hoverable info so descriptions are discoverable even if the label layout changes */}
+                <span aria-hidden className="ml-1 text-xs text-muted" title={ab.description ?? ""}>
+                  ⓘ
+                </span>
               </span>
             </label>
           ))}
@@ -225,8 +254,8 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
                 .map(stat => (
                   <TableRow key={stat as string}>
                     <TableHead>{stat}</TableHead>
-                    <TableCell>{playerTitan ? playerTitan.stats[stat] : "-"}</TableCell>
-                    <TableCell>{opponentTitan ? opponentTitan.stats[stat] : "-"}</TableCell>
+                    <TableCell>{playerStats[stat as string] ?? "-"}</TableCell>
+                    <TableCell>{opponentStats[stat as string] ?? "-"}</TableCell>
                   </TableRow>
                 ))}
 
@@ -240,7 +269,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         </CardContent>
       </Card>
     ),
-    [playerTitan, opponentTitan, playerHP, opponentHP, statsOrder, playerCharge, opponentCharge]
+    [playerTitan, opponentTitan, playerHP, opponentHP, statsOrder, playerCharge, opponentCharge, playerStats, opponentStats]
   );
 
   // Round / ability card (combines round header, ability selector and buttons)
