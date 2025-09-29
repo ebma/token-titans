@@ -38,15 +38,23 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
   const titanIds = Object.values(game.titans || {});
   const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
 
-  // Build lightweight titanAbilities mapping for clients (id, name, cost). Cost may be unknown here so default to 100.
-  const titanAbilities: Record<string, { id: string; name: string; cost: number }> = {};
+  // Build lightweight titanAbilities mapping for clients as an array per titan (id, name, cost).
+  // Cost may be unknown here so default to 100. This lets clients render multiple abilities even before server finalizes costs.
+  const titanAbilities: Record<string, { id: string; name: string; cost: number }[]> = {};
   for (const t of titans) {
-    const abilityId = (t as any).abilities?.[0];
-    titanAbilities[t.id] = {
-      cost: 100,
-      id: abilityId ?? "none",
-      name: (t as any).specialAbility ?? abilityId ?? "None"
-    };
+    const abilityIds: string[] = (t as any).abilities ?? [];
+    if (!abilityIds || abilityIds.length === 0) {
+      // expose empty array so client can fallback to specialAbility text
+      titanAbilities[t.id] = [];
+    } else {
+      titanAbilities[t.id] = abilityIds.map(aid => {
+        return {
+          cost: 100,
+          id: aid,
+          name: (t as any).specialAbility ?? aid ?? "None"
+        };
+      });
+    }
   }
 
   // Ensure game.meta includes titanAbilities so clients can render ability UI

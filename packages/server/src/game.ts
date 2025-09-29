@@ -87,16 +87,24 @@ export class GameManager {
     this.roundActions.set(game.id, {});
 
     // Attach lightweight ephemeral meta to the stored Game object for broadcasting.
-    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }> = {};
+    // titanAbilities is now an array per titan so clients can render multiple abilities.
+    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }[]> = {};
     for (const tid of Object.keys(titanRecord)) {
       const t = titanRecord[tid];
-      const abilityId = (t as any).abilities?.[0];
-      const ability = abilityId ? ABILITIES[abilityId] : undefined;
-      titanAbilitiesMap[tid] = {
-        cost: ability?.cost ?? 100,
-        id: abilityId ?? "none",
-        name: ability?.name ?? (t as any).specialAbility ?? "None"
-      };
+      const abilityIds: string[] = (t as any).abilities ?? [];
+      if (!abilityIds || abilityIds.length === 0) {
+        // No explicit abilities listed; expose empty array so client can fall back to specialAbility text
+        titanAbilitiesMap[tid] = [];
+      } else {
+        titanAbilitiesMap[tid] = abilityIds.map(aid => {
+          const ability = ABILITIES[aid];
+          return {
+            cost: ability?.cost ?? 100,
+            id: aid,
+            name: ability?.name ?? (t as any).specialAbility ?? "Unknown"
+          };
+        });
+      }
     }
     (game as any).meta = {
       lockedPlayers: {},
@@ -133,16 +141,22 @@ export class GameManager {
     this.gameTitans.set(gameId, titanRecord);
     this.roundActions.set(gameId, {});
 
-    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }> = {};
+    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }[]> = {};
     for (const tid of Object.keys(titanRecord)) {
       const t = titanRecord[tid];
-      const abilityId = (t as any).abilities?.[0];
-      const ability = abilityId ? ABILITIES[abilityId] : undefined;
-      titanAbilitiesMap[tid] = {
-        cost: ability?.cost ?? 100,
-        id: abilityId ?? "none",
-        name: ability?.name ?? (t as any).specialAbility ?? "None"
-      };
+      const abilityIds: string[] = (t as any).abilities ?? [];
+      if (!abilityIds || abilityIds.length === 0) {
+        titanAbilitiesMap[tid] = [];
+      } else {
+        titanAbilitiesMap[tid] = abilityIds.map(aid => {
+          const ability = ABILITIES[aid];
+          return {
+            cost: ability?.cost ?? 100,
+            id: aid,
+            name: ability?.name ?? (t as any).specialAbility ?? "Unknown"
+          };
+        });
+      }
     }
 
     (game as any).meta = {
@@ -342,14 +356,23 @@ export class GameManager {
           break;
         }
       } else if (act.type === "SpecialAbility") {
-        // Resolve special ability by looking up titan's assigned ability
+        // Resolve special ability by looking up titan's assigned ability by index (provided by client) or default to 0.
         const titansForGame = this.gameTitans.get(gameId) ?? {};
         const titanObj = titansForGame[attackerTitanId];
-        const abilityId = (titanObj as any).abilities?.[0];
-        const ability = abilityId ? ABILITIES[abilityId] : undefined;
+        const abilityIndex = (act as any).payload?.abilityIndex ?? 0;
+        const abilityId = (titanObj as any).abilities?.[abilityIndex];
+        if (!abilityId) {
+          roundLog.push(
+            `${attackerTitan?.name ?? attackerTitanId} attempted SpecialAbility (index ${abilityIndex}) but no ability found at that index.`
+          );
+          continue;
+        }
+        const ability = ABILITIES[abilityId];
 
         if (!ability) {
-          roundLog.push(`${attackerTitan?.name ?? attackerTitanId} attempted SpecialAbility but no ability found.`);
+          roundLog.push(
+            `${attackerTitan?.name ?? attackerTitanId} attempted SpecialAbility but ability data missing for id=${abilityId}.`
+          );
           continue;
         }
 
@@ -410,18 +433,24 @@ export class GameManager {
     // Advance the round number only when the game continues; reset lockedPlayers for the next round.
     const startRound = (game.meta?.roundNumber as number) ?? 1;
     const nextRound = game.gameState === "Finished" ? startRound : startRound + 1;
-    // Build titanAbilities mapping for meta
-    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }> = {};
+    // Build titanAbilities mapping for meta (array per titan)
+    const titanAbilitiesMap: Record<string, { id: string; name: string; cost: number }[]> = {};
     const titansForGameFinal = this.gameTitans.get(gameId) ?? {};
     for (const tid of Object.keys(titansForGameFinal)) {
       const t = titansForGameFinal[tid];
-      const abilityId = (t as any).abilities?.[0];
-      const ability = abilityId ? ABILITIES[abilityId] : undefined;
-      titanAbilitiesMap[tid] = {
-        cost: ability?.cost ?? 100,
-        id: abilityId ?? "none",
-        name: ability?.name ?? (t as any).specialAbility ?? "None"
-      };
+      const abilityIds: string[] = (t as any).abilities ?? [];
+      if (!abilityIds || abilityIds.length === 0) {
+        titanAbilitiesMap[tid] = [];
+      } else {
+        titanAbilitiesMap[tid] = abilityIds.map(aid => {
+          const ability = ABILITIES[aid];
+          return {
+            cost: ability?.cost ?? 100,
+            id: aid,
+            name: ability?.name ?? (t as any).specialAbility ?? "Unknown"
+          };
+        });
+      }
     }
 
     (game as any).meta = {

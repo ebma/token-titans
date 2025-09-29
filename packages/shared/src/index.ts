@@ -43,7 +43,7 @@ export type Game = {
 export type GameAction =
   | { type: "Attack"; payload: { targetId: string } }
   | { type: "Defend" }
-  | { type: "SpecialAbility"; payload: { targetId: string } }
+  | { type: "SpecialAbility"; payload: { targetId: string; abilityIndex?: number } }
   | { type: "Rest" };
 
 export type AuthRequestEvent = {

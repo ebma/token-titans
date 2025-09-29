@@ -16,10 +16,12 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const session = useAuthStore(state => state.session);
   const titans = useTitanStore(state => state.titans);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [selectedAbilityIndex, setSelectedAbilityIndex] = useState<number | null>(0);
 
   // Reset selected action when a new round starts so the UI does not remain highlighted
   useEffect(() => {
     setSelectedAction(null);
+    setSelectedAbilityIndex(0);
   }, [game?.meta?.roundNumber]);
 
   if (!game || !session) {
@@ -119,22 +121,47 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           <div className="font-semibold">Round #{roundNumber}</div>
           <div className="text-sm">{opponentLocked ? "Opponent waiting" : "Opponent undecided"}</div>
         </div>
-        {/* Ability info (from server meta if available) */}
+        {/* Ability info (from server meta if available) - now supports multiple abilities per titan */}
         <div className="mt-2 mb-1 text-sm">
           {(() => {
             const titanAbilitiesMeta =
               (
                 meta as unknown as {
-                  titanAbilities?: Record<string, { id: string; name: string; cost: number }>;
+                  titanAbilities?: Record<string, { id: string; name: string; cost: number }[]>;
                 }
               ).titanAbilities ?? {};
-            const playerAbility = playerTitanId
-              ? (titanAbilitiesMeta[playerTitanId] ?? { cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" })
-              : { cost: 100, id: "none", name: "None" };
+            let abilities = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
+            if (!abilities || abilities.length === 0) {
+              abilities = playerTitanId
+                ? [{ cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" }]
+                : [{ cost: 100, id: "none", name: "None" }];
+            }
+            const selIdx = selectedAbilityIndex ?? 0;
+            const selectedAbility = abilities[selIdx] ?? abilities[0];
             return (
               <div>
-                Ability: <span className="font-semibold">{playerAbility.name}</span>{" "}
-                <span className="text-muted">({playerAbility.cost}%)</span>
+                <div>
+                  Selected Ability: <span className="font-semibold">{selectedAbility.name}</span>{" "}
+                  <span className="text-muted">({selectedAbility.cost}%)</span>
+                </div>
+                <div className="mt-1 flex gap-3 flex-wrap">
+                  {abilities.map((ab, idx) => (
+                    <label
+                      className="inline-flex items-center gap-2 text-sm cursor-pointer select-none"
+                      key={ab.id + "-" + idx}
+                    >
+                      <input
+                        checked={selIdx === idx}
+                        name="ability"
+                        onChange={() => setSelectedAbilityIndex(idx)}
+                        type="radio"
+                      />
+                      <span>
+                        {ab.name} <span className="text-muted">({ab.cost}%)</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
             );
           })()}
@@ -167,18 +194,24 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
               const titanAbilitiesMeta =
                 (
                   meta as unknown as {
-                    titanAbilities?: Record<string, { id: string; name: string; cost: number }>;
+                    titanAbilities?: Record<string, { id: string; name: string; cost: number }[]>;
                   }
                 ).titanAbilities ?? {};
-              const playerAbility = playerTitanId
-                ? (titanAbilitiesMeta[playerTitanId] ?? { cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" })
-                : { cost: 100, id: "none", name: "None" };
-              return playerCharge < (playerAbility.cost ?? 100);
+              let abilities = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
+              if (!abilities || abilities.length === 0) {
+                abilities = playerTitanId
+                  ? [{ cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" }]
+                  : [{ cost: 100, id: "none", name: "None" }];
+              }
+              const idx = selectedAbilityIndex ?? 0;
+              const selected = abilities[idx] ?? abilities[0];
+              return playerCharge < (selected.cost ?? 100);
             })()}
             onClick={() => {
               setSelectedAction("SpecialAbility");
+              const idx = selectedAbilityIndex ?? 0;
               handleAction({
-                payload: { targetId: opponentPlayerId ?? "player2" },
+                payload: { abilityIndex: idx, targetId: opponentPlayerId ?? "player2" },
                 type: "SpecialAbility"
               });
             }}
