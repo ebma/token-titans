@@ -1,6 +1,7 @@
 import { Box, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import type { GameAction, PlayerActionEvent } from "@shared/index";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
@@ -11,6 +12,7 @@ import { useTitanStore } from "@/hooks/useTitanStore";
 
 export function GameView({ ws }: { ws: WebSocket | null }) {
   const game = useGameStore(state => state.game);
+  const setGame = useGameStore(state => state.setGame);
   const session = useAuthStore(state => state.session);
   const titans = useTitanStore(state => state.titans);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
@@ -60,6 +62,20 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
 
   return (
     <div className="flex h-full w-full flex-col">
+      <div className="p-4">
+        <Button
+          disabled={game.gameState !== "Finished"}
+          onClick={() => {
+            setGame(null);
+            if (ws) {
+              ws.send(JSON.stringify({ type: "lobbyInfoRequest" }));
+            }
+          }}
+        >
+          <ArrowLeft />
+          Back
+        </Button>
+      </div>
       <div className="flex-grow">
         <Canvas
           camera={{ fov: 50, position: [0, 5, 8] }}

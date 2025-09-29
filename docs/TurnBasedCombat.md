@@ -35,10 +35,10 @@ SpecialAbility:
 
 Defend:
 - No immediate HP change by itself; it raises effective defense via the multiplier above.
-- If a defended attack occurs, defender gains +25 charge (server does Math.round and caps at 100).
-
+- If a defended attack occurs, defender gains +20 charge (server does Math.round and caps at 100).
+ 
 Rest:
-- Immediately sets the titan's charge to 100.
+- Increases special charge by +60% (capped at 100%).
 
 Charge tracking & bookkeeping:
 - Server tracks per-game integer titanCharges (0–100). Charges are rounded and clamped to [0,100].

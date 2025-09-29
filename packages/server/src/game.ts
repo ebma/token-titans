@@ -273,11 +273,11 @@ export class GameManager {
         const afterHP = Math.round(Math.max(0, beforeHP - damage));
         hpRecord[defenderTitanId] = afterHP;
 
-        // If defender defended this attack, it charges +25 (cap below)
+        // If defender defended this attack, it charges +20 (cap below)
         if (defenderAction?.type === "Defend") {
-          chargeRecord[defenderTitanId] = Math.min(100, Math.round((chargeRecord[defenderTitanId] ?? 0) + 25));
+          chargeRecord[defenderTitanId] = Math.min(100, Math.round((chargeRecord[defenderTitanId] ?? 0) + 20));
           roundLog.push(
-            `${defenderTitan?.name ?? defenderTitanId} defended and charges special by +25 (now ${chargeRecord[defenderTitanId]}%).`
+            `${defenderTitan?.name ?? defenderTitanId} defended and charges special by +20 (now ${chargeRecord[defenderTitanId]}%).`
           );
         }
 
@@ -318,8 +318,10 @@ export class GameManager {
           break;
         }
       } else if (act.type === "Rest") {
-        chargeRecord[attackerTitanId] = 100;
-        roundLog.push(`${attackerTitan?.name ?? attackerTitanId} rests and charge set to 100%.`);
+        chargeRecord[attackerTitanId] = Math.min(100, Math.round((chargeRecord[attackerTitanId] ?? 0) + 60));
+        roundLog.push(
+          `${attackerTitan?.name ?? attackerTitanId} rests and charges special by +60 (now ${chargeRecord[attackerTitanId]}%).`
+        );
       } else if (act.type === "Defend") {
         // Defend only matters when being attacked (handled in attack branch)
         // No immediate HP change; we already logged the choice above.
