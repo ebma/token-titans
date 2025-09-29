@@ -73,15 +73,21 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const lockedPlayers = meta.lockedPlayers ?? {};
   const opponentLocked = opponentPlayerId ? lockedPlayers[opponentPlayerId] : false;
 
-  // Compute abilities once and reuse. Prefer server-provided meta.titanAbilities (contains descriptions).
+  // Compute abilities once and reuse.
+  // Prefer server-provided meta.titanAbilities (global meta) -> titan.abilitiesMeta (per-titan payload) -> fallback from titan.abilities
   const abilities = useMemo<TitanAbility[]>(() => {
-    const titanAbilitiesMeta = (meta as { titanAbilities?: Record<string, TitanAbility[]> }).titanAbilities ?? {};
-    let abs: TitanAbility[] = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
+    const metaAbilitiesMap = (meta as { titanAbilities?: Record<string, TitanAbility[]> }).titanAbilities ?? {};
+    // prefer meta map first
+    let abs: TitanAbility[] = playerTitanId ? (metaAbilitiesMap[playerTitanId] ?? []) : [];
 
-    // If server didn't provide ability meta for this titan, build a minimal fallback from the titan object
+    // if meta map empty, prefer per-titan abilitiesMeta (attached to titan object by server)
+    if ((!abs || abs.length === 0) && playerTitan?.abilitiesMeta && playerTitan.abilitiesMeta.length > 0) {
+      abs = playerTitan.abilitiesMeta as TitanAbility[];
+    }
+
+    // final fallback: build minimal metadata from titan.abilities ids or specialAbility
     if (!abs || abs.length === 0) {
       const fallback: TitanAbility[] = (playerTitan?.abilities?.map((aid: string, idx: number) => {
-        // We don't have the full ABILITIES registry on the client, so expose a minimal fallback.
         return {
           cost: 100,
           description: "",
@@ -99,7 +105,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
     }
 
     return abs;
-  }, [meta, playerTitanId, playerTitan?.specialAbility, playerTitan?.abilities]);
+  }, [meta, playerTitanId, playerTitan?.specialAbility, playerTitan?.abilities, playerTitan?.abilitiesMeta]);
 
   // expose stat objects for safer indexing in the table
   const playerStats = useMemo<Record<string, number | string>>(() => playerTitan?.stats ?? {}, [playerTitan]);

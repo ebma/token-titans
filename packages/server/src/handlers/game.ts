@@ -59,8 +59,18 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
     meta: { ...(existingMeta ?? {}), titanAbilities }
   };
 
+  // Attach ability metadata to the titan objects that are sent in the gameStart payload
+  const titansWithMeta = titans.map(
+    t =>
+      ({
+        ...t,
+        // keep existing 'abilities' array for compatibility, add 'abilitiesMeta' with descriptions
+        abilitiesMeta: titanAbilities[t.id] ?? []
+      }) as unknown as typeof t
+  );
+
   const gameStartEvent: GameStartEvent = {
-    payload: { game: gameToSend, titans },
+    payload: { game: gameToSend, titans: titansWithMeta as unknown as typeof titans },
     type: "gameStart"
   };
 

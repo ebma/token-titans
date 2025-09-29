@@ -20,6 +20,8 @@ export type Titan = {
   specialAbility: string;
   // Optional list of ability IDs assigned to this titan (server-side only)
   abilities?: string[];
+  // Optional detailed ability metadata (id, name, cost, description) included by server in some events
+  abilitiesMeta?: { id: string; name: string; cost: number; description?: string }[];
 };
 
 export type GameState = "Lobby" | "PreBattle" | "Battle" | "Finished";
