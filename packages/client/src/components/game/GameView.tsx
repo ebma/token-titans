@@ -84,7 +84,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           camera={{ fov: 50, position: [0, 5, 8] }}
           fallback={<div>Sorry no WebGL supported!</div>}
           shadows
-          style={{ height: 400 }}
+          style={{ height: 300 }}
         >
           <ambientLight intensity={0.3} />
           {/* top directional light that casts shadows onto the plane */}
@@ -117,164 +117,172 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           <OrbitControls maxDistance={6} maxPolarAngle={Math.PI / 2} minDistance={4} minPolarAngle={0.2} />
         </Canvas>
       </div>
-      <div className="flex flex-col items-center gap-2 p-4">
-        <div className="flex items-center gap-4 rounded-4xl bg-primary px-4">
-          <div className="font-semibold">Round #{roundNumber}</div>
-          <div className="text-sm">{opponentLocked ? "Opponent waiting" : "Opponent undecided"}</div>
-        </div>
-        {/* Ability info (from server meta if available) - now supports multiple abilities per titan */}
-        <div className="mt-2 mb-1 text-sm">
-          {(() => {
-            const titanAbilitiesMeta =
-              (
-                meta as unknown as {
-                  titanAbilities?: Record<string, { id: string; name: string; cost: number; description?: string }[]>;
-                }
-              ).titanAbilities ?? {};
-            let abilities = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
-            if (!abilities || abilities.length === 0) {
-              abilities = playerTitanId
-                ? [{ cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" }]
-                : [{ cost: 100, id: "none", name: "None" }];
-            }
-            const selIdx = selectedAbilityIndex ?? 0;
-            const selectedAbility = abilities[selIdx] ?? abilities[0];
-            return (
-              <div>
-                <div>
-                  Selected Ability: <span className="font-semibold">{selectedAbility.name}</span>{" "}
-                  <span className="text-muted">({selectedAbility.cost}%)</span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-3">
-                  {abilities.map((ab, idx) => (
-                    <label
-                      className="inline-flex cursor-pointer select-none items-center gap-2 text-sm"
-                      key={ab.id + "-" + idx}
-                      title={ab.description ?? ""}
-                    >
-                      <input
-                        checked={selIdx === idx}
-                        name="ability"
-                        onChange={() => setSelectedAbilityIndex(idx)}
-                        type="radio"
-                      />
-                      <span>
-                        {ab.name} <span className="text-muted">({ab.cost}%)</span>
-                      </span>
-                    </label>
-                  ))}
+      <div className="m-4">
+        <div className="flex flex-row justify-around gap-4">
+          <Card className="shrink">
+            <CardHeader>
+              <div className="flex flex-col items-center gap-2 p-4">
+                <div className="flex items-center gap-4 rounded-4xl bg-primary px-4">
+                  <div className="font-semibold">Round #{roundNumber}</div>
+                  <div className="text-sm">{opponentLocked ? "Opponent waiting" : "Opponent undecided"}</div>
                 </div>
               </div>
-            );
-          })()}
-        </div>
-        <div className="flex justify-center gap-2">
-          <Button
-            className={selectedAction === "Attack" ? "bg-indigo-600 text-white" : ""}
-            onClick={() => {
-              setSelectedAction("Attack");
-              handleAction({
-                payload: { targetId: opponentPlayerId ?? "player2" },
-                type: "Attack"
-              });
-            }}
-          >
-            Attack
-          </Button>
-          <Button
-            className={selectedAction === "Defend" ? "bg-indigo-600 text-white" : ""}
-            onClick={() => {
-              setSelectedAction("Defend");
-              handleAction({ type: "Defend" });
-            }}
-          >
-            Defend
-          </Button>
-          <Button
-            className={selectedAction === "SpecialAbility" ? "bg-indigo-600 text-white" : ""}
-            // Only allow Special Ability when the titan is fully charged to 100%
-            disabled={playerCharge < 100}
-            onClick={() => {
-              setSelectedAction("SpecialAbility");
-              const idx = selectedAbilityIndex ?? 0;
-              handleAction({
-                payload: { abilityIndex: idx, targetId: opponentPlayerId ?? "player2" },
-                type: "SpecialAbility"
-              });
-            }}
-          >
-            Special Ability
-          </Button>
-          <Button
-            className={selectedAction === "Rest" ? "bg-indigo-600 text-white" : ""}
-            onClick={() => {
-              setSelectedAction("Rest");
-              handleAction({ type: "Rest" });
-            }}
-          >
-            Rest
-          </Button>
-        </div>
-      </div>
-
-      <Card className="m-4">
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Stat</TableHead>
-                <TableHead>{playerTitan?.name ?? "You"}</TableHead>
-                <TableHead>{opponentTitan?.name ?? "Opponent"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {/* Show HP from server meta when available */}
-              <TableRow>
-                <TableHead>HP</TableHead>
-                <TableCell>{playerHP}</TableCell>
-                <TableCell>{opponentHP}</TableCell>
-              </TableRow>
-
-              {statsOrder
-                .filter(s => s !== "HP")
-                .map(stat => (
-                  <TableRow key={stat as string}>
-                    <TableHead>{stat}</TableHead>
-                    <TableCell>{playerTitan ? playerTitan.stats[stat] : "-"}</TableCell>
-                    <TableCell>{opponentTitan ? opponentTitan.stats[stat] : "-"}</TableCell>
+            </CardHeader>
+            <CardContent>
+              {/* Ability info (from server meta if available) - now supports multiple abilities per titan */}
+              <div className="mt-2 mb-1 text-sm">
+                {(() => {
+                  const titanAbilitiesMeta =
+                    (
+                      meta as unknown as {
+                        titanAbilities?: Record<string, { id: string; name: string; cost: number; description?: string }[]>;
+                      }
+                    ).titanAbilities ?? {};
+                  let abilities = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
+                  if (!abilities || abilities.length === 0) {
+                    abilities = playerTitanId
+                      ? [{ cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" }]
+                      : [{ cost: 100, id: "none", name: "None" }];
+                  }
+                  const selIdx = selectedAbilityIndex ?? 0;
+                  const selectedAbility = abilities[selIdx] ?? abilities[0];
+                  return (
+                    <div>
+                      <div>
+                        Selected Ability: <span className="font-semibold">{selectedAbility.name}</span>{" "}
+                        <span className="text-muted">({selectedAbility.cost}%)</span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-3">
+                        {abilities.map((ab, idx) => (
+                          <label
+                            className="inline-flex cursor-pointer select-none items-center gap-2 text-sm"
+                            key={ab.id + "-" + idx}
+                            title={ab.description ?? ""}
+                          >
+                            <input
+                              checked={selIdx === idx}
+                              name="ability"
+                              onChange={() => setSelectedAbilityIndex(idx)}
+                              type="radio"
+                            />
+                            <span>
+                              {ab.name} <span className="text-muted">({ab.cost}%)</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+              <div className="flex justify-center gap-2">
+                <Button
+                  className={selectedAction === "Attack" ? "bg-indigo-600 text-white" : ""}
+                  onClick={() => {
+                    setSelectedAction("Attack");
+                    handleAction({
+                      payload: { targetId: opponentPlayerId ?? "player2" },
+                      type: "Attack"
+                    });
+                  }}
+                >
+                  Attack
+                </Button>
+                <Button
+                  className={selectedAction === "Defend" ? "bg-indigo-600 text-white" : ""}
+                  onClick={() => {
+                    setSelectedAction("Defend");
+                    handleAction({ type: "Defend" });
+                  }}
+                >
+                  Defend
+                </Button>
+                <Button
+                  className={selectedAction === "SpecialAbility" ? "bg-indigo-600 text-white" : ""}
+                  // Only allow Special Ability when the titan is fully charged to 100%
+                  disabled={playerCharge < 100}
+                  onClick={() => {
+                    setSelectedAction("SpecialAbility");
+                    const idx = selectedAbilityIndex ?? 0;
+                    handleAction({
+                      payload: { abilityIndex: idx, targetId: opponentPlayerId ?? "player2" },
+                      type: "SpecialAbility"
+                    });
+                  }}
+                >
+                  Special Ability
+                </Button>
+                <Button
+                  className={selectedAction === "Rest" ? "bg-indigo-600 text-white" : ""}
+                  onClick={() => {
+                    setSelectedAction("Rest");
+                    handleAction({ type: "Rest" });
+                  }}
+                >
+                  Rest
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shrink">
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Stat</TableHead>
+                    <TableHead>{playerTitan?.name ?? "You"}</TableHead>
+                    <TableHead>{opponentTitan?.name ?? "Opponent"}</TableHead>
                   </TableRow>
-                ))}
+                </TableHeader>
+                <TableBody>
+                  {/* Show HP from server meta when available */}
+                  <TableRow>
+                    <TableHead>HP</TableHead>
+                    <TableCell>{playerHP}</TableCell>
+                    <TableCell>{opponentHP}</TableCell>
+                  </TableRow>
 
-              <TableRow>
-                <TableHead>Charge</TableHead>
-                <TableCell>{playerCharge}%</TableCell>
-                <TableCell>{opponentCharge}%</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  {statsOrder
+                    .filter(s => s !== "HP")
+                    .map(stat => (
+                      <TableRow key={stat as string}>
+                        <TableHead>{stat}</TableHead>
+                        <TableCell>{playerTitan ? playerTitan.stats[stat] : "-"}</TableCell>
+                        <TableCell>{opponentTitan ? opponentTitan.stats[stat] : "-"}</TableCell>
+                      </TableRow>
+                    ))}
 
-      <Card className="m-4">
-        <CardHeader>
-          <CardTitle>
-            <h3 className="mb-2 font-bold">Game Log</h3>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>
-            {roundLog.length === 0 ? (
-              <div>No events yet.</div>
-            ) : (
-              roundLog.map((msg, idx) => (
-                <div className="text-sm leading-6" key={idx}>
-                  {msg}
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                  <TableRow>
+                    <TableHead>Charge</TableHead>
+                    <TableCell>{playerCharge}%</TableCell>
+                    <TableCell>{opponentCharge}%</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+        <Card className="grow m-4">
+          <CardHeader>
+            <CardTitle>
+              <h3 className="mb-2 font-bold">Game Log</h3>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>
+              {roundLog.length === 0 ? (
+                <div>No events yet.</div>
+              ) : (
+                roundLog.map((msg, idx) => (
+                  <div className="text-sm leading-6" key={idx}>
+                    {msg}
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
