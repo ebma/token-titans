@@ -1,5 +1,6 @@
 import type { CreateGameRequestEvent, Game, GameEvent, GameStartEvent, Player, PlayerActionEvent, Titan } from "@shared/index";
 import { WebSocket } from "ws";
+import { buildTitanAbilities, CombatMeta, RoundMeta, TitanAbilityMeta } from "../game/meta";
 import { ServerContext } from "../serverContext";
 
 /**
@@ -40,9 +41,9 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
 
   // Build lightweight titanAbilities mapping for clients as an array per titan (id, name, cost).
   // Cost may be unknown here so default to 100. This lets clients render multiple abilities even before server finalizes costs.
-  const titanAbilities: Record<string, { id: string; name: string; cost: number }[]> = {};
+  const titanAbilities: Record<string, TitanAbilityMeta[]> = {};
   for (const t of titans) {
-    const abilityIds: string[] = (t as any).abilities ?? [];
+    const abilityIds: string[] = t.abilities ?? [];
     if (!abilityIds || abilityIds.length === 0) {
       // expose empty array so client can fallback to specialAbility text
       titanAbilities[t.id] = [];
@@ -51,17 +52,19 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
         return {
           cost: 100,
           id: aid,
-          name: (t as any).specialAbility ?? aid ?? "None"
-        };
+          name: t.specialAbility ?? aid ?? "None"
+        } as TitanAbilityMeta;
       });
     }
   }
 
   // Ensure game.meta includes titanAbilities so clients can render ability UI
-  const gameToSend = {
+  const existingMeta = (game.meta ?? {}) as Partial<RoundMeta & CombatMeta>;
+  const mergedMeta = { ...existingMeta, titanAbilities } as Partial<RoundMeta & CombatMeta>;
+  const gameToSend: Game = {
     ...game,
-    ...((game as any).meta ? { meta: { ...(game as any).meta, titanAbilities } } : { meta: { titanAbilities } })
-  } as unknown as Game;
+    meta: mergedMeta
+  };
 
   const gameStartEvent: GameStartEvent = {
     payload: { game: gameToSend, titans },
@@ -88,14 +91,14 @@ export function handlePlayerAction(ws: WebSocket, event: PlayerActionEvent, ctx:
   const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
 
   // Ensure the game object sent to clients includes ephemeral meta (if present on the server-side game object)
-  const gameToSend = {
+  const existingMeta = (game.meta ?? {}) as Partial<RoundMeta & CombatMeta>;
+  const gameToSend: Game = {
     ...game,
-    // attach meta if it exists on the in-memory game object
-    ...((game as any).meta ? { meta: (game as any).meta } : {})
+    ...(Object.keys(existingMeta).length ? { meta: existingMeta } : {})
   };
 
   const gameUpdateEvent: GameEvent = {
-    payload: { game: gameToSend as unknown as any, titans },
+    payload: { game: gameToSend, titans },
     type: "GameUpdate"
   };
 

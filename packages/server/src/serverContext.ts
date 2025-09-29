@@ -1,6 +1,6 @@
 import type { AppEvent, LobbyUpdateEvent, Player } from "@shared/index";
 import { WebSocket, WebSocketServer } from "ws";
-import { GameManager } from "./game";
+import { GameManager } from "./game/manager";
 import { LobbyManager } from "./lobby";
 import { TitanManager } from "./titans";
 

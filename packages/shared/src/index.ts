@@ -18,6 +18,8 @@ export type Titan = {
   name: string;
   stats: Record<TitanStat, number>;
   specialAbility: string;
+  // Optional list of ability IDs assigned to this titan (server-side only)
+  abilities?: string[];
 };
 
 export type GameState = "Lobby" | "PreBattle" | "Battle" | "Finished";
