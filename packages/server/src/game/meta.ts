@@ -3,11 +3,13 @@ import { ABILITIES } from "../abilities";
 
 /**
  * Lightweight ability metadata exposed to clients.
+ * Includes description so clients can display ability details.
  */
 export type TitanAbilityMeta = {
   id: string;
   name: string;
   cost: number;
+  description?: string;
 };
 
 /**
@@ -44,9 +46,10 @@ export function buildTitanAbilities(titanRecord: Record<string, Titan>): Record<
         const ability = ABILITIES[aid];
         return {
           cost: ability?.cost ?? 100,
+          description: ability?.description ?? "",
           id: aid,
           name: ability?.name ?? t.specialAbility ?? "Unknown"
-        };
+        } as TitanAbilityMeta;
       });
     }
   }

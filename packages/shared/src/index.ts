@@ -34,6 +34,8 @@ export type Game = {
     lockedActions: Record<string, string>;
     titanCharges: { [p: string]: number };
     titanHPs: { [p: string]: number };
+    // Expose lightweight ability metadata to clients: titanId -> ability array
+    titanAbilities: Record<string, { id: string; name: string; cost: number; description?: string }[]>;
   }>;
   id: string;
   players: string[];

@@ -127,7 +127,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
             const titanAbilitiesMeta =
               (
                 meta as unknown as {
-                  titanAbilities?: Record<string, { id: string; name: string; cost: number }[]>;
+                  titanAbilities?: Record<string, { id: string; name: string; cost: number; description?: string }[]>;
                 }
               ).titanAbilities ?? {};
             let abilities = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
@@ -149,6 +149,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
                     <label
                       className="inline-flex items-center gap-2 text-sm cursor-pointer select-none"
                       key={ab.id + "-" + idx}
+                      title={ab.description ?? ""}
                     >
                       <input
                         checked={selIdx === idx}
@@ -190,23 +191,8 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           </Button>
           <Button
             className={selectedAction === "SpecialAbility" ? "bg-indigo-600 text-white" : ""}
-            disabled={(() => {
-              const titanAbilitiesMeta =
-                (
-                  meta as unknown as {
-                    titanAbilities?: Record<string, { id: string; name: string; cost: number }[]>;
-                  }
-                ).titanAbilities ?? {};
-              let abilities = playerTitanId ? (titanAbilitiesMeta[playerTitanId] ?? []) : [];
-              if (!abilities || abilities.length === 0) {
-                abilities = playerTitanId
-                  ? [{ cost: 100, id: "none", name: playerTitan?.specialAbility ?? "None" }]
-                  : [{ cost: 100, id: "none", name: "None" }];
-              }
-              const idx = selectedAbilityIndex ?? 0;
-              const selected = abilities[idx] ?? abilities[0];
-              return playerCharge < (selected.cost ?? 100);
-            })()}
+            // Only allow Special Ability when the titan is fully charged to 100%
+            disabled={playerCharge < 100}
             onClick={() => {
               setSelectedAction("SpecialAbility");
               const idx = selectedAbilityIndex ?? 0;

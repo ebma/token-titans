@@ -1,7 +1,7 @@
 import type { Game, GameAction, Titan } from "@shared/index";
 import { randomUUID } from "crypto";
+import { ABILITIES } from "../abilities";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
-import { resolveRound } from "./resolver";
 
 /**
  * GameManager (core): stores games, active titan selection and per-game records.
@@ -165,13 +165,9 @@ export class GameManager {
     const charges = this.titanCharges.get(gameId)!;
     const currentCharge = charges[titanId] ?? 0;
 
-    // Validate SpecialAbility usage against titan's first ability cost for quick rejection
+    // Validate SpecialAbility usage requires full charge (100%)
     if (action.type === "SpecialAbility") {
-      const titansForGame = this.gameTitans.get(gameId) ?? {};
-      const titanObj = titansForGame[titanId];
-      const abilityId = (titanObj as any).abilities?.[0];
-      const cost = abilityId ? (require("../abilities").ABILITIES[abilityId]?.cost ?? 100) : 100;
-      if (currentCharge < cost) {
+      if ((currentCharge ?? 0) < 100) {
         // Ignore the player's choice, return current game state (so clients receive updated info)
         return game;
       }
@@ -193,6 +189,9 @@ export class GameManager {
     if (allPlayersActed) {
       // Delegate resolution to resolver module which will update titanHPs/titanCharges and game.meta
       try {
+        // dynamically require the resolver at runtime to avoid circular module resolution issues
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { resolveRound } = require("./resolver");
         resolveRound(this, game.id);
       } catch (e) {
         console.error("resolveRound failed:", e);

@@ -39,31 +39,24 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
   const titanIds = Object.values(game.titans || {});
   const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
 
-  // Build lightweight titanAbilities mapping for clients as an array per titan (id, name, cost).
-  // Cost may be unknown here so default to 100. This lets clients render multiple abilities even before server finalizes costs.
-  const titanAbilities: Record<string, TitanAbilityMeta[]> = {};
-  for (const t of titans) {
-    const abilityIds: string[] = t.abilities ?? [];
-    if (!abilityIds || abilityIds.length === 0) {
-      // expose empty array so client can fallback to specialAbility text
-      titanAbilities[t.id] = [];
-    } else {
-      titanAbilities[t.id] = abilityIds.map(aid => {
-        return {
-          cost: 100,
-          id: aid,
-          name: t.specialAbility ?? aid ?? "None"
-        } as TitanAbilityMeta;
-      });
-    }
-  }
-
-  // Ensure game.meta includes titanAbilities so clients can render ability UI
+  // Prefer server-side meta if available (it includes ability descriptions); otherwise build from Titan objects.
   const existingMeta = (game.meta ?? {}) as Partial<RoundMeta & CombatMeta>;
-  const mergedMeta = { ...existingMeta, titanAbilities } as Partial<RoundMeta & CombatMeta>;
+
+  // Build a titanRecord from the titan list so buildTitanAbilities can be used as a single source of truth.
+  const titanRecord: Record<string, Titan> = {};
+  for (const t of titans) {
+    titanRecord[t.id] = t;
+  }
+  const builtAbilities = buildTitanAbilities(titanRecord);
+
+  const titanAbilities =
+    existingMeta.titanAbilities && Object.keys(existingMeta.titanAbilities).length > 0
+      ? existingMeta.titanAbilities
+      : builtAbilities;
+
   const gameToSend: Game = {
     ...game,
-    meta: mergedMeta
+    meta: { ...(existingMeta ?? {}), titanAbilities }
   };
 
   const gameStartEvent: GameStartEvent = {
