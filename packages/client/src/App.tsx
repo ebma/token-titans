@@ -103,7 +103,7 @@ function App() {
     return () => {
       socket.close();
     };
-  }, [setSession, setGame, setLobbyState, clearSession, setTitans]);
+  }, [setSession, setGame, setLobbyState, clearSession, setTitans, session?.userId]);
 
   const content = useMemo(() => {
     if (game) {

@@ -1,4 +1,4 @@
-import type { Game, GameAction, Titan } from "@shared/index";
+import type { GameAction, Titan } from "@shared/index";
 import { ABILITIES } from "../abilities";
 import type { GameManager } from "./manager";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
@@ -57,7 +57,8 @@ export function resolveRound(manager: GameManager, gameId: string) {
     const act = actions[attacker];
     if (!act) continue;
 
-    const defender = game.players.find(p => p !== attacker)!;
+    const defender = game.players.find(p => p !== attacker);
+    if (!defender) continue;
     const attackerTitanId = getTitanId(attacker);
     const defenderTitanId = getTitanId(defender);
     const attackerTitan = getTitanObj(attackerTitanId);
@@ -112,7 +113,7 @@ export function resolveRound(manager: GameManager, gameId: string) {
       }
     } else if (act.type === "SpecialAbility") {
       // Read abilityIndex from payload (default 0)
-      const abilityIndex = (act as any).payload?.abilityIndex ?? 0;
+      const abilityIndex = (act as { payload?: { abilityIndex?: number } }).payload?.abilityIndex ?? 0;
       const titanObj = titansForGame[attackerTitanId];
       const abilityId = titanObj?.abilities?.[abilityIndex];
       if (!abilityId) {
@@ -150,7 +151,7 @@ export function resolveRound(manager: GameManager, gameId: string) {
           shields,
           tempSpeedModifiers
         });
-      } catch (e) {
+      } catch (_e) {
         roundLog.push(`${attackerTitan?.name ?? attackerTitanId} failed to use ${ability.name}.`);
       }
 
@@ -182,13 +183,13 @@ export function resolveRound(manager: GameManager, gameId: string) {
   const nextRound = game.gameState === "Finished" ? startRound : startRound + 1;
 
   const titanAbilitiesMap = buildTitanAbilities(titansForGame);
-  (game as any).meta = {
+  game.meta = {
     roundLog,
     roundNumber: nextRound,
     titanAbilities: titanAbilitiesMap,
     titanCharges: { ...chargeRecord },
     titanHPs: { ...hpRecord }
-  } as RoundMeta & CombatMeta;
+  };
 
   manager._clearRoundActions(gameId);
 }

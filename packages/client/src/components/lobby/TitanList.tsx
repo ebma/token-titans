@@ -22,7 +22,7 @@ export const TitanList: React.FC<TitanListProps> = ({ titans }) => {
     <div className="space-y-4">
       {titans.map(titan => (
         <Card className="p-4" key={titan.id}>
-          <h3 className="text-lg font-bold mb-2">{titan.name}</h3>
+          <h3 className="mb-2 font-bold text-lg">{titan.name}</h3>
           <Table>
             <thead>
               <tr>

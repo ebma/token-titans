@@ -19,6 +19,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const [selectedAbilityIndex, setSelectedAbilityIndex] = useState<number | null>(0);
 
   // Reset selected action when a new round starts so the UI does not remain highlighted
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Only want to reset on roundNumber change
   useEffect(() => {
     setSelectedAction(null);
     setSelectedAbilityIndex(0);
@@ -144,10 +145,10 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
                   Selected Ability: <span className="font-semibold">{selectedAbility.name}</span>{" "}
                   <span className="text-muted">({selectedAbility.cost}%)</span>
                 </div>
-                <div className="mt-1 flex gap-3 flex-wrap">
+                <div className="mt-1 flex flex-wrap gap-3">
                   {abilities.map((ab, idx) => (
                     <label
-                      className="inline-flex items-center gap-2 text-sm cursor-pointer select-none"
+                      className="inline-flex cursor-pointer select-none items-center gap-2 text-sm"
                       key={ab.id + "-" + idx}
                       title={ab.description ?? ""}
                     >

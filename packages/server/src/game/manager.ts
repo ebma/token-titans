@@ -1,7 +1,7 @@
 import type { Game, GameAction, Titan } from "@shared/index";
 import { randomUUID } from "crypto";
-import { ABILITIES } from "../abilities";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
+import { resolveRound } from "./resolver";
 
 /**
  * GameManager (core): stores games, active titan selection and per-game records.
@@ -84,14 +84,14 @@ export class GameManager {
     // Build meta using helper
     const titanAbilitiesMap = buildTitanAbilities(titanRecord);
 
-    (game as any).meta = {
+    game.meta = {
       lockedPlayers: {},
       roundLog: [],
       roundNumber: 1,
       titanAbilities: titanAbilitiesMap,
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
-    } as RoundMeta & CombatMeta;
+    };
 
     this.games.set(game.id, game);
     return game;
@@ -121,14 +121,14 @@ export class GameManager {
 
     const titanAbilitiesMap = buildTitanAbilities(titanRecord);
 
-    (game as any).meta = {
+    game.meta = {
       lockedPlayers: {},
       roundLog: [],
       roundNumber: 1,
       titanAbilities: titanAbilitiesMap,
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
-    } as RoundMeta & CombatMeta;
+    };
 
     this.games.set(game.id, game);
   }
@@ -162,7 +162,7 @@ export class GameManager {
     }
 
     const titanId = game.titans[playerId];
-    const charges = this.titanCharges.get(gameId)!;
+    const charges = this.titanCharges.get(gameId) ?? {};
     const currentCharge = charges[titanId] ?? 0;
 
     // Validate SpecialAbility usage requires full charge (100%)
@@ -189,9 +189,6 @@ export class GameManager {
     if (allPlayersActed) {
       // Delegate resolution to resolver module which will update titanHPs/titanCharges and game.meta
       try {
-        // dynamically require the resolver at runtime to avoid circular module resolution issues
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { resolveRound } = require("./resolver");
         resolveRound(this, game.id);
       } catch (e) {
         console.error("resolveRound failed:", e);

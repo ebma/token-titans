@@ -43,11 +43,11 @@ export class TitanManager {
     const abilityIds = Object.keys(ABILITIES);
     if (abilityIds.length > 0) {
       const choice = abilityIds[Math.floor(Math.random() * abilityIds.length)];
-      (titan as any).abilities = [choice];
-      (titan as any).specialAbility = ABILITIES[choice]?.name ?? "None";
+      titan.abilities = [choice];
+      titan.specialAbility = ABILITIES[choice]?.name ?? "None";
     } else {
-      (titan as any).abilities = [];
-      (titan as any).specialAbility = "None";
+      titan.abilities = [];
+      titan.specialAbility = "None";
     }
 
     this.titans.set(id, titan);
