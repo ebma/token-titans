@@ -16,14 +16,14 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const setGame = useGameStore(state => state.setGame);
   const session = useAuthStore(state => state.session);
   const titans = useTitanStore(state => state.titans);
-  const [selectedAction, setSelectedAction] = useState<string | null>(null);
-  const [selectedAbilityIndex, setSelectedAbilityIndex] = useState<number | null>(0);
+  const [selectedActionType, setSelectedActionType] = useState<"Attack" | "Defend" | "Rest" | "Ability" | null>(null);
+  const [selectedAbilityId, setSelectedAbilityId] = useState<string | null>(null);
 
   // Reset selected action when a new round starts so the UI does not remain highlighted
   // biome-ignore lint/correctness/useExhaustiveDependencies: Only want to reset on roundNumber change
   useEffect(() => {
-    setSelectedAction(null);
-    setSelectedAbilityIndex(0);
+    setSelectedActionType(null);
+    setSelectedAbilityId(null);
   }, [game?.meta?.roundNumber]);
 
   const isWaiting = !game || !session;
@@ -122,96 +122,73 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
     []
   );
 
-  // Ability selector UI
-  const AbilitySelectorBlock = useMemo(() => {
-    const selIdx = selectedAbilityIndex ?? 0;
-    const selectedAbility = abilities[selIdx] ?? abilities[0];
-    return (
-      <div className="mt-2 mb-1 text-sm">
-        <div>
-          Selected Ability: <span className="font-semibold">{selectedAbility.name}</span>{" "}
-          <span className="text-primary">({selectedAbility.cost}%)</span>
-        </div>
-        <div className="mt-1 flex flex-wrap gap-3">
-          {abilities.map((ab: Ability, idx: number) => (
-            <label
-              className="inline-flex cursor-pointer select-none items-center gap-2 text-sm"
-              key={ab.id + "-" + idx}
-              title={ab.description ?? ""}
-            >
-              <input checked={selIdx === idx} name="ability" onChange={() => setSelectedAbilityIndex(idx)} type="radio" />
-              <span>
-                {ab.name} <span className="text-primary">({ab.cost}%)</span>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <span aria-hidden className="ml-1 cursor-help text-primary text-xs">
-                      ⓘ
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={6}>
-                    <div className="max-w-xs whitespace-normal break-words text-sm">{ab.description ?? "No description"}</div>
-                  </TooltipContent>
-                </Tooltip>
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-    );
-  }, [abilities, selectedAbilityIndex]);
-
-  // Action buttons (Attack, Defend, Special, Rest)
-  const ActionButtons = useMemo(
+  // Action selector UI
+  const ActionSelector = useMemo(
     () => (
-      <div className="flex justify-center gap-2">
-        <Button
-          className={selectedAction === "Attack" ? "bg-indigo-600 text-white" : ""}
-          onClick={() => {
-            setSelectedAction("Attack");
-            handleAction({
-              payload: { targetId: opponentPlayerId ?? "player2" },
-              type: "Attack"
-            });
-          }}
-        >
-          Attack
-        </Button>
-        <Button
-          className={selectedAction === "Defend" ? "bg-indigo-600 text-white" : ""}
-          onClick={() => {
-            setSelectedAction("Defend");
-            handleAction({ type: "Defend" });
-          }}
-        >
-          Defend
-        </Button>
-        <Button
-          className={selectedAction === "Ability" ? "bg-indigo-600 text-white" : ""}
-          disabled={playerCharge < (abilities[selectedAbilityIndex ?? 0]?.cost ?? 100)}
-          onClick={() => {
-            setSelectedAction("Ability");
-            const idx = selectedAbilityIndex ?? 0;
-            const abilityId = abilities[idx]?.id;
-            handleAction({
-              payload: { abilityId, targetId: opponentPlayerId ?? "player2" },
-              type: "Ability"
-            });
-          }}
-        >
-          Ability
-        </Button>
-        <Button
-          className={selectedAction === "Rest" ? "bg-indigo-600 text-white" : ""}
-          onClick={() => {
-            setSelectedAction("Rest");
-            handleAction({ type: "Rest" });
-          }}
-        >
-          Rest
-        </Button>
+      <div className="space-y-2">
+        <div className="flex justify-center gap-2">
+          <Button
+            className={selectedActionType === "Attack" ? "bg-indigo-600 text-white" : ""}
+            onClick={() => {
+              setSelectedActionType("Attack");
+              setSelectedAbilityId(null);
+              handleAction({
+                payload: { targetId: opponentPlayerId ?? "player2" },
+                type: "Attack"
+              });
+            }}
+          >
+            Attack
+          </Button>
+          <Button
+            className={selectedActionType === "Defend" ? "bg-indigo-600 text-white" : ""}
+            onClick={() => {
+              setSelectedActionType("Defend");
+              setSelectedAbilityId(null);
+              handleAction({ type: "Defend" });
+            }}
+          >
+            Defend
+          </Button>
+          <Button
+            className={selectedActionType === "Rest" ? "bg-indigo-600 text-white" : ""}
+            onClick={() => {
+              setSelectedActionType("Rest");
+              setSelectedAbilityId(null);
+              handleAction({ type: "Rest" });
+            }}
+          >
+            Rest
+          </Button>
+        </div>
+        {abilities.map((ab: Ability) => (
+          <div className="flex justify-center" key={ab.id}>
+            <Tooltip delayDuration={500}>
+              <TooltipTrigger>
+                <Button
+                  className={selectedActionType === "Ability" && selectedAbilityId === ab.id ? "bg-indigo-600 text-white" : ""}
+                  disabled={playerCharge < ab.cost}
+                  onClick={() => {
+                    setSelectedActionType("Ability");
+                    setSelectedAbilityId(ab.id);
+                    handleAction({
+                      payload: { abilityId: ab.id, targetId: opponentPlayerId ?? "player2" },
+                      type: "Ability"
+                    });
+                  }}
+                >
+                  {ab.name} ({ab.cost}%)
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent sideOffset={6}>
+                <div className="max-w-60 whitespace-normal break-words text-sm">{ab.description}</div>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        ))}
       </div>
     ),
-    [selectedAction, playerCharge, handleAction, opponentPlayerId, selectedAbilityIndex, abilities]
+    [selectedActionType, selectedAbilityId, playerCharge, handleAction, opponentPlayerId, abilities]
   );
 
   // Stats table
@@ -257,7 +234,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
     [playerTitan, opponentTitan, playerHP, opponentHP, statsOrder, playerCharge, opponentCharge, playerStats, opponentStats]
   );
 
-  // Round / ability card (combines round header, ability selector and buttons)
+  // Round / action card (combines round header and action selector)
   const RoundCard = useMemo(
     () => (
       <Card className="shrink">
@@ -269,13 +246,10 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {AbilitySelectorBlock}
-          {ActionButtons}
-        </CardContent>
+        <CardContent>{ActionSelector}</CardContent>
       </Card>
     ),
-    [roundNumber, opponentLocked, AbilitySelectorBlock, ActionButtons]
+    [roundNumber, opponentLocked, ActionSelector]
   );
 
   // Game log card
