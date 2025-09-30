@@ -1,8 +1,9 @@
 import { Box, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import type { Ability, GameAction, PlayerActionEvent } from "@shared/index";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BadgeCheckIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -240,10 +241,11 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
       <Card className="shrink">
         <CardHeader>
           <div className="flex flex-col items-center gap-2 p-4">
-            <div className="flex items-center gap-4 rounded-4xl bg-primary px-4">
-              <div className="font-semibold">Round #{roundNumber}</div>
-              <div className="text-sm">{opponentLocked ? "Opponent waiting" : "Opponent undecided"}</div>
-            </div>
+            <div className="text-xl">Round #{roundNumber}</div>
+            <Badge className={opponentLocked ? "bg-green-600 text-white" : "bg-yellow-500 text-black"}>
+              <div className="text-sm">{opponentLocked ? "Opponent ready" : "Opponent undecided"}</div>
+              {opponentLocked && <BadgeCheckIcon />}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent>{ActionSelector}</CardContent>
