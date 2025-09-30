@@ -3,7 +3,7 @@
 import type { Titan } from "@shared/index.ts";
 import React from "react";
 import { Card } from "../ui/card";
-import { Table } from "../ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 interface TitanListProps {
   titans: Titan[];
@@ -24,24 +24,24 @@ export const TitanList: React.FC<TitanListProps> = ({ titans }) => {
         <Card className="p-4" key={titan.id}>
           <h3 className="mb-2 font-bold text-lg">{titan.name}</h3>
           <Table>
-            <thead>
-              <tr>
-                <th>Stat</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stat</TableHead>
+                <TableHead>Value</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {Object.entries(titan.stats).map(([stat, value]) => (
-                <tr key={stat}>
-                  <td>{stat}</td>
-                  <td>{String(value)}</td>
-                </tr>
+                <TableRow key={stat}>
+                  <TableCell>{stat}</TableCell>
+                  <TableCell>{String(value)}</TableCell>
+                </TableRow>
               ))}
-              <tr>
-                <td>Special Ability</td>
-                <td>{titan.specialAbility}</td>
-              </tr>
-            </tbody>
+              <TableRow>
+                <TableCell>Special Ability</TableCell>
+                <TableCell>{titan.specialAbility}</TableCell>
+              </TableRow>
+            </TableBody>
           </Table>
         </Card>
       ))}

@@ -1,5 +1,5 @@
+import type { Player, Room } from "@shared/index.ts";
 import { create } from "zustand";
-import type { Player, Room } from "../../../shared/src/index";
 
 interface LobbyState {
   players: Player[];

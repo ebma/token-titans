@@ -1,6 +1,6 @@
 // [`useTitanStore.ts`](packages/client/src/hooks/useTitanStore.ts:1)
+import type { Titan } from "@shared/index.ts";
 import { create } from "zustand";
-import type { Titan } from "../../../shared/src/index";
 
 interface TitanStoreState {
   titans: Titan[];
