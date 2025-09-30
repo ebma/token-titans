@@ -30,7 +30,7 @@ export function resolveRound(manager: GameManager, gameId: string) {
     const titanId = getTitanId(player);
     const titanObj = getTitanObj(titanId);
     if (act) {
-      roundLog.push(`${titanObj?.name ?? titanId} chooses to ${act.type === "SpecialAbility" ? "SpecialAbility" : act.type}.`);
+      roundLog.push(`${titanObj?.name ?? titanId} chooses to ${act.type === "Ability" ? "Ability" : act.type}.`);
     }
   }
 
@@ -111,22 +111,18 @@ export function resolveRound(manager: GameManager, gameId: string) {
         roundLog.push(`${defenderTitan?.name ?? defenderTitanId} is defeated — ${defender} wins.`);
         break;
       }
-    } else if (act.type === "SpecialAbility") {
-      // Read abilityIndex from payload (default 0)
-      const abilityIndex = (act as { payload?: { abilityIndex?: number } }).payload?.abilityIndex ?? 0;
-      const titanObj = titansForGame[attackerTitanId];
-      const abilityId = titanObj?.abilities?.[abilityIndex];
+    } else if (act.type === "Ability") {
+      // Read abilityId from payload
+      const abilityId = (act as { payload?: { abilityId?: string } }).payload?.abilityId;
       if (!abilityId) {
-        roundLog.push(
-          `${attackerTitan?.name ?? attackerTitanId} attempted SpecialAbility (index ${abilityIndex}) but no ability found at that index.`
-        );
+        roundLog.push(`${attackerTitan?.name ?? attackerTitanId} attempted Ability but no abilityId provided.`);
         continue;
       }
 
       const ability = ABILITIES[abilityId];
       if (!ability) {
         roundLog.push(
-          `${attackerTitan?.name ?? attackerTitanId} attempted SpecialAbility but ability data missing for id=${abilityId}.`
+          `${attackerTitan?.name ?? attackerTitanId} attempted Ability but ability data missing for id=${abilityId}.`
         );
         continue;
       }

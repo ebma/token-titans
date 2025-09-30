@@ -15,7 +15,7 @@ Round lifecycle:
   - updates titanHPs, titanCharges, and game.meta (roundLog, roundNumber, titanHPs, titanCharges).
 
 Action types:
-- Attack, Defend, SpecialAbility, Rest.
+- Attack, Defend, Ability, Rest.
 
 Turn order:
 - For each titan: $speedRoll = Speed * Math.random()$.
@@ -29,11 +29,11 @@ Attack damage calculation:
 - $damage = \max(0, attackValue - effectiveDef)$.
 - HP update: $newHP = \text{Math.round}(\max(0, oldHP - damage))$; HP is clamped to >= 0.
 
-SpecialAbility:
+Ability:
 - Abilities are now data-driven per-titan. Each titan starts with one random ability assigned when generated.
-- SpecialAbility submissions are validated by the server against the ability's cost. Using an ability deducts that ability's cost from the titan's current charge (charges are not automatically reset to 0 unless the ability does so).
+- Ability submissions are validated by the server against the ability's cost. Using an ability deducts that ability's cost from the titan's current charge (charges are not automatically reset to 0 unless the ability does so).
 - Example simple abilities include heals, damage multipliers, shields, charge gain, and debuffs. Costs vary (typically 5–50). See server ABILITIES implementation in [`packages/server/src/abilities.ts`](packages/server/src/abilities.ts:1).
-- The server will ignore SpecialAbility submissions if the titan's current charge is less than the ability's cost.
+- The server will ignore Ability submissions if the titan's current charge is less than the ability's cost.
 
 Defend:
 - No immediate HP change by itself; it raises effective defense via the multiplier above.
@@ -48,7 +48,7 @@ Charge tracking & bookkeeping:
 - game.meta (ephemeral) includes roundLog (human messages), roundNumber, titanHPs, titanCharges, and titanAbilities mapping and is broadcast to clients (it does not expose opponent-internal action details).
 
 Edge cases:
-- SpecialAbility validated on submit; invalid usage is ignored.
+- Ability validated on submit; invalid usage is ignored.
 - Game is marked Finished when a titan's HP <= 0; resolveRound stops applying further actions.
 - All rounding behavior uses Math.round as implemented in [`packages/server/src/game.ts`](packages/server/src/game.ts:1).
 

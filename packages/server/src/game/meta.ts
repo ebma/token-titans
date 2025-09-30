@@ -1,16 +1,5 @@
-import type { Titan } from "@shared/index";
+import type { Ability, Titan } from "@shared/index";
 import { ABILITIES } from "../abilities";
-
-/**
- * Lightweight ability metadata exposed to clients.
- * Includes description so clients can display ability details.
- */
-export type TitanAbilityMeta = {
-  id: string;
-  name: string;
-  cost: number;
-  description?: string;
-};
 
 /**
  * Round-related ephemeral metadata.
@@ -27,30 +16,27 @@ export type RoundMeta = {
 export type CombatMeta = {
   titanHPs: Record<string, number>;
   titanCharges: Record<string, number>;
-  titanAbilities: Record<string, TitanAbilityMeta[]>;
+  titanAbilities: Record<string, Ability[]>;
 };
 
 /**
  * Build a titanAbilities mapping (titanId -> ability metadata array) from Titan records.
  * If a titan has no explicit abilities, an empty array is returned for that titan.
  */
-export function buildTitanAbilities(titanRecord: Record<string, Titan>): Record<string, TitanAbilityMeta[]> {
-  const map: Record<string, TitanAbilityMeta[]> = {};
+export function buildTitanAbilities(titanRecord: Record<string, Titan>): Record<string, Ability[]> {
+  const map: Record<string, Ability[]> = {};
   for (const tid of Object.keys(titanRecord)) {
     const t = titanRecord[tid];
-    const abilityIds: string[] = t.abilities ?? [];
-    if (!abilityIds || abilityIds.length === 0) {
+    const abilities = t.abilities ?? [];
+    if (!abilities || abilities.length === 0) {
       map[tid] = [];
     } else {
-      map[tid] = abilityIds.map(aid => {
-        const ability = ABILITIES[aid];
-        return {
-          cost: ability?.cost ?? 100,
-          description: ability?.description ?? "",
-          id: aid,
-          name: ability?.name ?? t.specialAbility ?? "Unknown"
-        } as TitanAbilityMeta;
-      });
+      map[tid] = abilities.map(ability => ({
+        cost: ability.cost,
+        description: ability.description,
+        id: ability.id,
+        name: ability.name
+      }));
     }
   }
   return map;

@@ -140,7 +140,7 @@ export class GameManager {
   /**
    * Handle a player's action:
    * - validate game and player
-   * - validate SpecialAbility availability (charge against default 0 index), otherwise ignore the action
+   * - validate Ability availability (charge against default 0 index), otherwise ignore the action
    * - store action for the round; when both players acted, trigger resolveRound (delegated)
    */
   handlePlayerAction(gameId: string, playerId: string, action: GameAction): Game | undefined {
@@ -165,8 +165,8 @@ export class GameManager {
     const charges = this.titanCharges.get(gameId) ?? {};
     const currentCharge = charges[titanId] ?? 0;
 
-    // Validate SpecialAbility usage requires full charge (100%)
-    if (action.type === "SpecialAbility") {
+    // Validate Ability usage requires full charge (100%)
+    if (action.type === "Ability") {
       if ((currentCharge ?? 0) < 100) {
         // Ignore the player's choice, return current game state (so clients receive updated info)
         return game;

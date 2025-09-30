@@ -33,21 +33,25 @@ export class TitanManager {
     };
 
     const titan: Titan = {
+      abilities: [],
       id,
       name,
-      specialAbility: "None",
       stats
     };
 
-    // Assign a random ability id from ABILITIES and expose a human-readable name for UI
+    // Assign a random ability from ABILITIES
     const abilityIds = Object.keys(ABILITIES);
     if (abilityIds.length > 0) {
       const choice = abilityIds[Math.floor(Math.random() * abilityIds.length)];
-      titan.abilities = [choice];
-      titan.specialAbility = ABILITIES[choice]?.name ?? "None";
-    } else {
-      titan.abilities = [];
-      titan.specialAbility = "None";
+      const ability = ABILITIES[choice];
+      titan.abilities = [
+        {
+          cost: ability.cost,
+          description: ability.description,
+          id: ability.id,
+          name: ability.name
+        }
+      ];
     }
 
     this.titans.set(id, titan);

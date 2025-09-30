@@ -13,15 +13,18 @@ export type Room = {
 
 export type TitanStat = "HP" | "Attack" | "Defense" | "Speed" | "Stamina";
 
+export type Ability = {
+  id: string;
+  name: string;
+  cost: number;
+  description?: string;
+};
+
 export type Titan = {
   id: string;
   name: string;
   stats: Record<TitanStat, number>;
-  specialAbility: string;
-  // Optional list of ability IDs assigned to this titan (server-side only)
-  abilities?: string[];
-  // Optional detailed ability metadata (id, name, cost, description) included by server in some events
-  abilitiesMeta?: { id: string; name: string; cost: number; description?: string }[];
+  abilities: Ability[];
 };
 
 export type GameState = "Lobby" | "PreBattle" | "Battle" | "Finished";
@@ -36,8 +39,7 @@ export type Game = {
     lockedActions: Record<string, string>;
     titanCharges: { [p: string]: number };
     titanHPs: { [p: string]: number };
-    // Expose lightweight ability metadata to clients: titanId -> ability array
-    titanAbilities: Record<string, { id: string; name: string; cost: number; description?: string }[]>;
+    titanAbilities: Record<string, Ability[]>;
   }>;
   id: string;
   players: string[];
@@ -49,7 +51,7 @@ export type Game = {
 export type GameAction =
   | { type: "Attack"; payload: { targetId: string } }
   | { type: "Defend" }
-  | { type: "SpecialAbility"; payload: { targetId: string; abilityIndex?: number } }
+  | { type: "Ability"; payload: { targetId: string; abilityId?: string } }
   | { type: "Rest" };
 
 export type AuthRequestEvent = {

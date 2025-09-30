@@ -38,8 +38,8 @@ export const TitanList: React.FC<TitanListProps> = ({ titans }) => {
                 </TableRow>
               ))}
               <TableRow>
-                <TableCell>Special Ability</TableCell>
-                <TableCell>{titan.specialAbility}</TableCell>
+                <TableCell>Abilities</TableCell>
+                <TableCell>{(titan.abilities ?? []).map(a => a.name).join(", ") || "None"}</TableCell>
               </TableRow>
             </TableBody>
           </Table>

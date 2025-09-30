@@ -1,6 +1,6 @@
 import { Box, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import type { GameAction, PlayerActionEvent } from "@shared/index";
+import type { Ability, GameAction, PlayerActionEvent } from "@shared/index";
 import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,16 +10,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { useGameStore } from "@/hooks/useGameStore";
 import { useTitanStore } from "@/hooks/useTitanStore";
-
-/**
- * Local helper type for ability metadata exposed by the server.
- */
-type TitanAbility = {
-  id: string;
-  name: string;
-  cost: number;
-  description?: string;
-};
 
 export function GameView({ ws }: { ws: WebSocket | null }) {
   const game = useGameStore(state => state.game);
@@ -75,38 +65,19 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const opponentLocked = opponentPlayerId ? lockedPlayers[opponentPlayerId] : false;
 
   // Compute abilities once and reuse.
-  // Prefer server-provided meta.titanAbilities (global meta) -> titan.abilitiesMeta (per-titan payload) -> fallback from titan.abilities
-  const abilities = useMemo<TitanAbility[]>(() => {
-    const metaAbilitiesMap = (meta as { titanAbilities?: Record<string, TitanAbility[]> }).titanAbilities ?? {};
+  // Prefer server-provided meta.titanAbilities (global meta) -> fallback from titan.abilities
+  const abilities = useMemo<Ability[]>(() => {
+    const metaAbilitiesMap = (meta as { titanAbilities?: Record<string, Ability[]> }).titanAbilities ?? {};
     // prefer meta map first
-    let abs: TitanAbility[] = playerTitanId ? (metaAbilitiesMap[playerTitanId] ?? []) : [];
+    let abs: Ability[] = playerTitanId ? (metaAbilitiesMap[playerTitanId] ?? []) : [];
 
-    // if meta map empty, prefer per-titan abilitiesMeta (attached to titan object by server)
-    if ((!abs || abs.length === 0) && playerTitan?.abilitiesMeta && playerTitan.abilitiesMeta.length > 0) {
-      abs = playerTitan.abilitiesMeta as TitanAbility[];
-    }
-
-    // final fallback: build minimal metadata from titan.abilities ids or specialAbility
+    // final fallback: use titan.abilities directly
     if (!abs || abs.length === 0) {
-      const fallback: TitanAbility[] = (playerTitan?.abilities?.map((aid: string, idx: number) => {
-        return {
-          cost: 100,
-          description: "",
-          id: aid ?? `ability-${idx}`,
-          name: playerTitan?.specialAbility ?? "Special"
-        } as TitanAbility;
-      }) ?? []) as TitanAbility[];
-
-      abs =
-        fallback.length > 0
-          ? fallback
-          : playerTitanId
-            ? [{ cost: 100, description: "", id: "none", name: playerTitan?.specialAbility ?? "None" }]
-            : [{ cost: 100, description: "", id: "none", name: "None" }];
+      abs = playerTitan?.abilities ?? [];
     }
 
     return abs;
-  }, [meta, playerTitanId, playerTitan?.specialAbility, playerTitan?.abilities, playerTitan?.abilitiesMeta]);
+  }, [meta, playerTitanId, playerTitan?.abilities]);
 
   // expose stat objects for safer indexing in the table
   const playerStats = useMemo<Record<string, number | string>>(() => playerTitan?.stats ?? {}, [playerTitan]);
@@ -162,7 +133,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           <span className="text-primary">({selectedAbility.cost}%)</span>
         </div>
         <div className="mt-1 flex flex-wrap gap-3">
-          {abilities.map((ab: TitanAbility, idx: number) => (
+          {abilities.map((ab: Ability, idx: number) => (
             <label
               className="inline-flex cursor-pointer select-none items-center gap-2 text-sm"
               key={ab.id + "-" + idx}
@@ -215,18 +186,19 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
           Defend
         </Button>
         <Button
-          className={selectedAction === "SpecialAbility" ? "bg-indigo-600 text-white" : ""}
+          className={selectedAction === "Ability" ? "bg-indigo-600 text-white" : ""}
           disabled={playerCharge < 100}
           onClick={() => {
-            setSelectedAction("SpecialAbility");
+            setSelectedAction("Ability");
             const idx = selectedAbilityIndex ?? 0;
+            const abilityId = abilities[idx]?.id;
             handleAction({
-              payload: { abilityIndex: idx, targetId: opponentPlayerId ?? "player2" },
-              type: "SpecialAbility"
+              payload: { abilityId, targetId: opponentPlayerId ?? "player2" },
+              type: "Ability"
             });
           }}
         >
-          Special Ability
+          Ability
         </Button>
         <Button
           className={selectedAction === "Rest" ? "bg-indigo-600 text-white" : ""}
@@ -239,7 +211,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         </Button>
       </div>
     ),
-    [selectedAction, playerCharge, handleAction, opponentPlayerId, selectedAbilityIndex]
+    [selectedAction, playerCharge, handleAction, opponentPlayerId, selectedAbilityIndex, abilities]
   );
 
   // Stats table

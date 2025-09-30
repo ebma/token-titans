@@ -1,6 +1,6 @@
 import type { CreateGameRequestEvent, Game, GameEvent, GameStartEvent, Player, PlayerActionEvent, Titan } from "@shared/index";
 import { WebSocket } from "ws";
-import { buildTitanAbilities, CombatMeta, RoundMeta, TitanAbilityMeta } from "../game/meta";
+import { buildTitanAbilities, CombatMeta, RoundMeta } from "../game";
 import { ServerContext } from "../serverContext";
 
 /**
