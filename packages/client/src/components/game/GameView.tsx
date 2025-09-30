@@ -187,7 +187,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         </Button>
         <Button
           className={selectedAction === "Ability" ? "bg-indigo-600 text-white" : ""}
-          disabled={playerCharge < 100}
+          disabled={playerCharge < (abilities[selectedAbilityIndex ?? 0]?.cost ?? 100)}
           onClick={() => {
             setSelectedAction("Ability");
             const idx = selectedAbilityIndex ?? 0;

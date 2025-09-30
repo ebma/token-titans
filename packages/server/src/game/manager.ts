@@ -140,8 +140,8 @@ export class GameManager {
   /**
    * Handle a player's action:
    * - validate game and player
-   * - validate Ability availability (charge against default 0 index), otherwise ignore the action
    * - store action for the round; when both players acted, trigger resolveRound (delegated)
+   * - Ability cost validation is handled in resolver.ts where ability data is available
    */
   handlePlayerAction(gameId: string, playerId: string, action: GameAction): Game | undefined {
     const game = this.getGame(gameId);
@@ -161,17 +161,7 @@ export class GameManager {
       return game;
     }
 
-    const titanId = game.titans[playerId];
-    const charges = this.titanCharges.get(gameId) ?? {};
-    const currentCharge = charges[titanId] ?? 0;
-
-    // Validate Ability usage requires full charge (100%)
-    if (action.type === "Ability") {
-      if ((currentCharge ?? 0) < 100) {
-        // Ignore the player's choice, return current game state (so clients receive updated info)
-        return game;
-      }
-    }
+    // Ability cost validation is handled in resolver.ts where ability data is available
 
     // Store action for the round
     const actions = this.roundActions.get(gameId) ?? {};
