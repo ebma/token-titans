@@ -61,7 +61,7 @@ export function useRoundAnimator({ playerId, sequence, playerRef, opponentRef, o
       onAnimating?.(false);
     };
 
-    if (sequence.length > 0) {
+    if (sequence.length > 0 && playerRef.current && opponentRef.current) {
       runSequence();
     }
   }, [sequence, playerId, playerRef, opponentRef, onAnimating, playSound]);
