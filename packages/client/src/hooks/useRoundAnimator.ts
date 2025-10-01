@@ -12,14 +12,7 @@ interface UseRoundAnimatorParams {
   onAnimating?: (animating: boolean) => void;
 }
 
-export function useRoundAnimator({
-  playerId,
-  opponentId,
-  sequence,
-  playerRef,
-  opponentRef,
-  onAnimating
-}: UseRoundAnimatorParams) {
+export function useRoundAnimator({ playerId, sequence, playerRef, opponentRef, onAnimating }: UseRoundAnimatorParams) {
   const { playSound } = useSoundManager();
 
   useEffect(() => {
@@ -37,27 +30,28 @@ export function useRoundAnimator({
               const targetPos = targetRef.current.getPosition();
               const direction = targetPos.clone().sub(actorPos).normalize();
               const lungePos = actorPos.clone().add(direction.multiplyScalar(1.5));
+
+              playSound("attack");
               await actorRef.current.lungeToPoint(lungePos);
               if (action.result === "Death") {
                 targetRef.current.setDead();
               }
             }
-            await playSound("attack");
             break;
           case "Defend":
             // Action->Animation mapping: Defend triggers rotation and scale animation
+            playSound("defend");
             await actorRef.current.defend();
-            await playSound("defend");
             break;
           case "Rest":
             // Action->Animation mapping: Rest triggers scale down animation
+            playSound("rest");
             await actorRef.current.rest();
-            await playSound("rest");
             break;
           case "Ability":
             // Action->Animation mapping: Ability triggers pulse and color flash animation
+            playSound("ability");
             await actorRef.current.abilityPulse();
-            await playSound("ability");
             break;
           default:
             break;
