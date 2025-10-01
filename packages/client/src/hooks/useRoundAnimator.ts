@@ -1,6 +1,7 @@
 import type { RoundSequence } from "@shared/index";
 import { useEffect } from "react";
 import type { TitanHandle } from "@/components/game/AnimatedTitan";
+import { useSoundManager } from "./useSoundManager";
 
 interface UseRoundAnimatorParams {
   playerId?: string;
@@ -19,12 +20,7 @@ export function useRoundAnimator({
   opponentRef,
   onAnimating
 }: UseRoundAnimatorParams) {
-  // Sound helper
-  const playSound = (type: "attack" | "defend" | "rest" | "ability") => {
-    // Add sound files to /public/sounds/attack.mp3, defend.mp3, rest.mp3, ability.mp3
-    const audio = new Audio(`/public/sounds/${type}.mp3`);
-    audio.play().catch(() => {}); // Ignore errors if sound not found
-  };
+  const { playSound } = useSoundManager();
 
   useEffect(() => {
     const runSequence = async () => {
@@ -74,5 +70,5 @@ export function useRoundAnimator({
     if (sequence.length > 0) {
       runSequence();
     }
-  }, [sequence, playerId, opponentId, playerRef, opponentRef, onAnimating]);
+  }, [sequence, playerId, playerRef, opponentRef, onAnimating, playSound]);
 }

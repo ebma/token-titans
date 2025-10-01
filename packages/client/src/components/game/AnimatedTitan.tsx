@@ -44,7 +44,6 @@ export const AnimatedTitan = forwardRef<TitanHandle, AnimatedTitanProps>(({ colo
           }
         };
         animate();
-        // Sound placeholder: add sound file to /public/sounds/ability.mp3
       });
     },
 
@@ -83,7 +82,6 @@ export const AnimatedTitan = forwardRef<TitanHandle, AnimatedTitanProps>(({ colo
           }
         };
         animate();
-        // Sound placeholder: add sound file to /public/sounds/defend.mp3
       });
     },
 
@@ -118,7 +116,6 @@ export const AnimatedTitan = forwardRef<TitanHandle, AnimatedTitanProps>(({ colo
           }
         };
         animate();
-        // Sound placeholder: add sound file to /public/sounds/attack.mp3
       });
     },
 
@@ -153,7 +150,6 @@ export const AnimatedTitan = forwardRef<TitanHandle, AnimatedTitanProps>(({ colo
           }
         };
         animate();
-        // Sound placeholder: add sound file to /public/sounds/rest.mp3
       });
     },
 
