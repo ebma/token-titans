@@ -42,22 +42,22 @@ export function useRoundAnimator({
                 targetRef.current.setDead();
               }
             }
-            playSound("attack");
+            await playSound("attack");
             break;
           case "Defend":
             // Action->Animation mapping: Defend triggers rotation and scale animation
             await actorRef.current.defend();
-            playSound("defend");
+            await playSound("defend");
             break;
           case "Rest":
             // Action->Animation mapping: Rest triggers scale down animation
             await actorRef.current.rest();
-            playSound("rest");
+            await playSound("rest");
             break;
           case "Ability":
             // Action->Animation mapping: Ability triggers pulse and color flash animation
             await actorRef.current.abilityPulse();
-            playSound("ability");
+            await playSound("ability");
             break;
           default:
             break;
