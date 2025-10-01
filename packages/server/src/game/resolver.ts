@@ -1,4 +1,4 @@
-import type { GameAction, Titan } from "@shared/index";
+import type { GameAction, RoundAction, RoundActionKind, RoundActionResult, RoundSequence, Titan } from "@shared/index";
 import { ABILITIES } from "../abilities";
 import type { GameManager } from "./manager";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
@@ -21,6 +21,7 @@ export function resolveRound(manager: GameManager, gameId: string) {
   const getTitanObj = (titanId: string) => titansForGame[titanId];
 
   const roundLog: string[] = [];
+  const roundSequence: RoundAction[] = [];
   const shields: Record<string, number> = {};
   const tempSpeedModifiers: Record<string, number> = {};
 
@@ -72,6 +73,13 @@ export function resolveRound(manager: GameManager, gameId: string) {
 
     if ((hpRecord[defenderTitanId] ?? 0) <= 0) continue;
 
+    const roundAction: RoundAction = {
+      abilityId: act.type === "Ability" ? (act.payload as { abilityId?: string }).abilityId : undefined,
+      action: act.type as RoundActionKind,
+      actorId: attacker,
+      targetId: act.type === "Attack" || act.type === "Ability" ? defender : undefined
+    };
+
     if (act.type === "Attack") {
       const rand = Math.random();
       const attackValue = (attackerTitan?.stats.Attack ?? 0) * (1 + rand);
@@ -93,6 +101,8 @@ export function resolveRound(manager: GameManager, gameId: string) {
       const afterHP = Math.round(Math.max(0, beforeHP - damage));
       hpRecord[defenderTitanId] = afterHP;
 
+      roundAction.result = damage > 0 ? "Hit" : "Miss";
+
       if (defenderAction?.type === "Defend") {
         chargeRecord[defenderTitanId] = Math.min(100, Math.round((chargeRecord[defenderTitanId] ?? 0) + 20));
         roundLog.push(
@@ -109,13 +119,18 @@ export function resolveRound(manager: GameManager, gameId: string) {
       if (afterHP <= 0) {
         game.gameState = "Finished";
         roundLog.push(`${defenderTitan?.name ?? defenderTitanId} is defeated — ${defender} wins.`);
+        roundAction.result = "Death";
+        roundSequence.push(roundAction);
         break;
       }
+      roundSequence.push(roundAction);
     } else if (act.type === "Ability") {
       // Read abilityId from payload
       const abilityId = (act as { payload?: { abilityId?: string } }).payload?.abilityId;
       if (!abilityId) {
         roundLog.push(`${attackerTitan?.name ?? attackerTitanId} attempted Ability but no abilityId provided.`);
+        roundAction.result = "Miss";
+        roundSequence.push(roundAction);
         continue;
       }
 
@@ -124,17 +139,22 @@ export function resolveRound(manager: GameManager, gameId: string) {
         roundLog.push(
           `${attackerTitan?.name ?? attackerTitanId} attempted Ability but ability data missing for id=${abilityId}.`
         );
+        roundAction.result = "Miss";
+        roundSequence.push(roundAction);
         continue;
       }
 
       const cost = ability.cost ?? 100;
       if ((chargeRecord[attackerTitanId] ?? 0) < cost) {
         roundLog.push(`${attackerTitan?.name ?? attackerTitanId} attempted ${ability.name} but has insufficient charge.`);
+        roundAction.result = "Miss";
+        roundSequence.push(roundAction);
         continue;
       }
 
       chargeRecord[attackerTitanId] = Math.max(0, Math.round((chargeRecord[attackerTitanId] ?? 0) - cost));
 
+      let abilitySuccess = true;
       try {
         ability.apply({
           attackerId: attackerTitanId,
@@ -149,21 +169,29 @@ export function resolveRound(manager: GameManager, gameId: string) {
         });
       } catch (_e) {
         roundLog.push(`${attackerTitan?.name ?? attackerTitanId} failed to use ${ability.name}.`);
+        abilitySuccess = false;
       }
+
+      roundAction.result = abilitySuccess ? "Hit" : "Miss";
 
       const afterHP = hpRecord[defenderTitanId] ?? 0;
       if (afterHP <= 0) {
         game.gameState = "Finished";
         roundLog.push(`${defenderTitan?.name ?? defenderTitanId} is defeated — ${defender} wins.`);
+        roundAction.result = "Death";
+        roundSequence.push(roundAction);
         break;
       }
+      roundSequence.push(roundAction);
     } else if (act.type === "Rest") {
       chargeRecord[attackerTitanId] = Math.min(100, Math.round((chargeRecord[attackerTitanId] ?? 0) + 60));
       roundLog.push(
         `${attackerTitan?.name ?? attackerTitanId} rests and charges special by +60 (now ${chargeRecord[attackerTitanId]}%).`
       );
+      roundSequence.push(roundAction);
     } else if (act.type === "Defend") {
       // nothing immediate
+      roundSequence.push(roundAction);
     }
   }
 
@@ -182,6 +210,7 @@ export function resolveRound(manager: GameManager, gameId: string) {
   game.meta = {
     roundLog,
     roundNumber: nextRound,
+    roundSequence,
     titanAbilities: titanAbilitiesMap,
     titanCharges: { ...chargeRecord },
     titanHPs: { ...hpRecord }

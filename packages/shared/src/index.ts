@@ -37,6 +37,7 @@ export type Game = {
     roundNumber: number;
     lockedPlayers: Record<string, boolean>;
     lockedActions: Record<string, string>;
+    roundSequence?: RoundSequence;
     titanCharges: { [p: string]: number };
     titanHPs: { [p: string]: number };
     titanAbilities: Record<string, Ability[]>;
@@ -53,6 +54,17 @@ export type GameAction =
   | { type: "Defend" }
   | { type: "Ability"; payload: { targetId: string; abilityId?: string } }
   | { type: "Rest" };
+
+export type RoundActionKind = "Attack" | "Defend" | "Rest" | "Ability";
+export type RoundActionResult = "Hit" | "Miss" | "Death";
+export interface RoundAction {
+  actorId: string;
+  action: RoundActionKind;
+  targetId?: string;
+  abilityId?: string;
+  result?: RoundActionResult;
+}
+export type RoundSequence = RoundAction[];
 
 export type AuthRequestEvent = {
   type: "authRequest";

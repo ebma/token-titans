@@ -1,5 +1,4 @@
-import type { Ability, Titan } from "@shared/index";
-import { ABILITIES } from "../abilities";
+import type { Ability, RoundSequence, Titan } from "@shared/index";
 
 /**
  * Round-related ephemeral metadata.
@@ -8,6 +7,7 @@ export type RoundMeta = {
   roundNumber: number;
   roundLog: string[];
   lockedPlayers: Record<string, boolean>;
+  roundSequence?: RoundSequence;
 };
 
 /**
