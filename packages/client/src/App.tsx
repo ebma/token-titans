@@ -5,7 +5,8 @@ import type {
   LobbyInfoRequestEvent,
   LobbyUpdateEvent,
   ReconnectFailedEvent,
-  ReconnectRequestEvent
+  ReconnectRequestEvent,
+  TitansUpdateEvent
 } from "@shared/index";
 import { useEffect, useMemo, useState } from "react";
 import { WEB_SERVER_URL } from "@/lib/constants.ts";
@@ -80,6 +81,8 @@ function App() {
         setLastRoundResult(payload.roundResult);
       } else if (receivedEvent.type === "lobbyUpdate") {
         setLobbyState((receivedEvent as LobbyUpdateEvent).payload);
+      } else if (receivedEvent.type === "titansUpdate") {
+        setTitans((receivedEvent as TitansUpdateEvent).payload.titans);
       } else {
         console.log("Message from server ", receivedEvent.type);
       }

@@ -6,7 +6,8 @@ import type {
   Player,
   PlayerActionEvent,
   RoundResult,
-  Titan
+  Titan,
+  TitansUpdateEvent
 } from "@shared/index";
 import { WebSocket } from "ws";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "../game";
@@ -125,5 +126,17 @@ export function handlePlayerAction(ws: WebSocket, event: PlayerActionEvent, ctx:
     result.game.players.forEach(pId => {
       ctx.sendToUser(pId, roundCompleteEvent);
     });
+
+    // If game finished, emit TitansUpdateEvent to update client titan data
+    if (result.game.gameState === "Finished") {
+      result.game.players.forEach(playerId => {
+        const titans = ctx.titanManager.getTitansForPlayer(playerId);
+        const titansUpdateEvent: TitansUpdateEvent = {
+          payload: { titans },
+          type: "titansUpdate"
+        };
+        ctx.sendToUser(playerId, titansUpdateEvent);
+      });
+    }
   }
 }
