@@ -92,7 +92,7 @@ function App() {
     return () => {
       socket.close();
     };
-  }, [setSession, setGame, setLobbyState, clearSession, setTitans]);
+  }, [setSession, setGame, setLobbyState, clearSession, setTitans, setLastRoundResult]);
 
   const content = useMemo(() => {
     if (game) {

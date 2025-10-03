@@ -36,6 +36,7 @@ export class TitanManager {
       abilities: [],
       id,
       name,
+      ownerId: playerId,
       stats
     };
 

@@ -23,6 +23,7 @@ export type Ability = {
 export type Titan = {
   id: string;
   name: string;
+  ownerId: string;
   stats: Record<TitanStat, number>;
   abilities: Ability[];
 };

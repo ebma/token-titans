@@ -15,8 +15,10 @@ type LobbyProps = {
 export function Lobby({ ws }: LobbyProps) {
   const { session } = useAuthStore();
   const { players, rooms } = useLobbyStore();
+  const { getPlayerTitans } = useTitanStore();
 
   const currentRoom = session ? rooms.find(room => room.players.includes(session.userId)) : undefined;
+  const playerTitans = getPlayerTitans();
 
   return (
     <div className="flex min-h-screen flex-col ">
@@ -38,7 +40,7 @@ export function Lobby({ ws }: LobbyProps) {
               <CardTitle>Your Titans</CardTitle>
             </CardHeader>
             <CardContent>
-              <TitanList titans={useTitanStore(s => s.titans)} />
+              <TitanList titans={playerTitans} />
             </CardContent>
           </Card>
         </div>

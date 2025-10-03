@@ -1,5 +1,5 @@
 import type { Ability, GameAction, PlayerActionEvent } from "@shared/index";
-import { ArrowLeft, BadgeCheckIcon } from "lucide-react";
+import { ArrowLeft, Hourglass } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const opponentHP = opponentTitan ? (hpMeta[opponentTitan.id] ?? opponentTitan.stats.HP ?? "-") : "-";
 
   const lockedPlayers = meta.lockedPlayers ?? {};
+  const playerLocked = session?.userId ? lockedPlayers[session.userId] : false;
   const opponentLocked = opponentPlayerId ? lockedPlayers[opponentPlayerId] : false;
 
   // Compute abilities once and reuse.
@@ -201,16 +202,18 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         <CardHeader>
           <div className="flex flex-col items-center gap-2 p-4">
             <div className="text-xl">Round #{roundNumber}</div>
-            <Badge className={opponentLocked ? "bg-green-600 text-white" : "bg-yellow-500 text-black"}>
-              <div className="text-sm">{opponentLocked ? "Opponent ready" : "Opponent undecided"}</div>
-              {opponentLocked && <BadgeCheckIcon />}
+            <Badge className={playerLocked ? "bg-green-600 text-white" : "bg-yellow-500 text-black"}>
+              <div className="text-sm">
+                {!playerLocked ? "Choose an action" : !opponentLocked ? "Waiting for opponent" : "All done. "}
+              </div>
+              {opponentLocked && <Hourglass />}
             </Badge>
           </div>
         </CardHeader>
         <CardContent>{ActionSelector}</CardContent>
       </Card>
     ),
-    [roundNumber, opponentLocked, ActionSelector]
+    [roundNumber, opponentLocked, playerLocked, ActionSelector]
   );
 
   // Game log card

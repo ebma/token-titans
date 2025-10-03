@@ -18,6 +18,7 @@ export function useRoundAnimator({ playerId, sequence, playerRef, opponentRef, o
   useEffect(() => {
     const runSequence = async () => {
       onAnimating?.(true);
+      const holdActions: { handle: TitanHandle; action: "Defend" | "Rest" }[] = [];
       for (const action of sequence) {
         const actorRef = action.actorId === playerId ? playerRef : opponentRef;
         const targetRef = action.targetId === playerId ? playerRef : opponentRef;
@@ -39,14 +40,16 @@ export function useRoundAnimator({ playerId, sequence, playerRef, opponentRef, o
             }
             break;
           case "Defend":
-            // Action->Animation mapping: Defend triggers rotation and scale animation
+            // Action->Animation mapping: Defend triggers start of rotation and scale animation
             playSound("defend");
-            await actorRef.current.defend();
+            await actorRef.current.defendStart();
+            holdActions.push({ action: "Defend", handle: actorRef.current });
             break;
           case "Rest":
-            // Action->Animation mapping: Rest triggers scale down animation
+            // Action->Animation mapping: Rest triggers start of scale down animation
             playSound("rest");
-            await actorRef.current.rest();
+            await actorRef.current.restStart();
+            holdActions.push({ action: "Rest", handle: actorRef.current });
             break;
           case "Ability":
             // Action->Animation mapping: Ability triggers pulse and color flash animation
@@ -57,6 +60,14 @@ export function useRoundAnimator({ playerId, sequence, playerRef, opponentRef, o
             break;
         }
         await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      // Revert hold actions
+      for (const { handle, action } of holdActions) {
+        if (action === "Defend") {
+          await handle.defendEnd();
+        } else if (action === "Rest") {
+          await handle.restEnd();
+        }
       }
       onAnimating?.(false);
     };
