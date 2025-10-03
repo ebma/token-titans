@@ -76,8 +76,11 @@ export class TitanManager {
     const id = "titan_" + Math.random().toString(36).slice(2, 10);
     const name = TITAN_NAMES[randomInt(0, TITAN_NAMES.length - 1)];
     const stats: Record<TitanStat, number> = {
+      Accuracy: randomInt(5, 10),
       Attack: randomInt(5, 10),
+      CriticalChance: randomInt(5, 10),
       Defense: randomInt(5, 10),
+      Evasion: randomInt(5, 10),
       HP: randomInt(20, 30),
       Speed: randomInt(5, 10),
       Stamina: randomInt(5, 10)

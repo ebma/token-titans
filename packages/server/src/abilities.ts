@@ -170,8 +170,11 @@ export const ABILITIES: Record<
 
   quick_charge: {
     apply: ({ attackerId, chargeRecord, roundLog, attackerTitan }) => {
+      const baseGain = 40;
+      const stamina = attackerTitan?.stats.Stamina ?? 0;
+      const effectiveGain = Math.min(100, Math.round(baseGain * (1 + stamina / 100)));
       const before = Math.round(chargeRecord[attackerId] ?? 0);
-      const after = Math.min(100, Math.round(before + 40));
+      const after = Math.min(100, Math.round(before + effectiveGain));
       chargeRecord[attackerId] = after;
       roundLog.push(
         `${attackerTitan?.name ?? attackerId} uses Quick Charge and gains ${after - before}% charge (now ${after}%).`

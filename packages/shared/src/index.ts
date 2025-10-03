@@ -11,7 +11,7 @@ export type Room = {
   maxPlayers: number;
 };
 
-export type TitanStat = "HP" | "Attack" | "Defense" | "Speed" | "Stamina";
+export type TitanStat = "HP" | "Attack" | "Defense" | "Speed" | "Stamina" | "Evasion" | "Accuracy" | "CriticalChance";
 
 export type Ability = {
   id: string;

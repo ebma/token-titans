@@ -189,9 +189,13 @@ export function resolveRound(manager: GameManager, gameId: string): RoundResult 
       }
       roundSequence.push(roundAction);
     } else if (act.type === "Rest") {
-      chargeRecord[attackerTitanId] = Math.min(100, Math.round((chargeRecord[attackerTitanId] ?? 0) + 60));
+      const baseRestGain = 20;
+      const stamina = attackerTitan?.stats.Stamina ?? 0;
+      const effectiveGain = Math.min(100, Math.round(baseRestGain * (1 + stamina / 100)));
+      const before = Math.round(chargeRecord[attackerTitanId] ?? 0);
+      chargeRecord[attackerTitanId] = Math.min(100, Math.round(before + effectiveGain));
       roundLog.push(
-        `${attackerTitan?.name ?? attackerTitanId} rests and charges special by +60 (now ${chargeRecord[attackerTitanId]}%).`
+        `${attackerTitan?.name ?? attackerTitanId} rests and charges special by +${effectiveGain} (now ${chargeRecord[attackerTitanId]}%).`
       );
       roundSequence.push(roundAction);
     } else if (act.type === "Defend") {
