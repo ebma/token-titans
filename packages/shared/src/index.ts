@@ -44,7 +44,7 @@ export type Game = {
   }>;
   id: string;
   players: string[];
-  titans: Record<string, string>; // PlayerID to TitanID
+  titans: Record<string, Titan>; // PlayerID to Titan
   gameState: GameState;
   gameMode: GameMode;
 };
@@ -123,7 +123,7 @@ export type PlayerActionEvent = {
 
 export type GameEvent =
   | { type: "GameStart"; payload: { game: Game } }
-  | { type: "GameUpdate"; payload: { game: Game; titans: Titan[] } }
+  | { type: "GameUpdate"; payload: { game: Game } }
   | { type: "ActionRequest"; payload: { playerId: string } }
   | { type: "ActionResponse"; payload: { playerId: string; action: GameAction } };
 

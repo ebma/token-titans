@@ -36,8 +36,7 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
 
   const game = ctx.gameManager.createGame(gamePlayers, activeTitansForRequest, titansForGame);
 
-  const titanIds = Object.values(game.titans || {});
-  const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
+  const titans = Object.values(game.titans || {});
 
   // Prefer server-side meta if available (it includes ability descriptions); otherwise build from Titan objects.
   const existingMeta = (game.meta ?? {}) as Partial<RoundMeta & CombatMeta>;
@@ -90,9 +89,6 @@ export function handlePlayerAction(ws: WebSocket, event: PlayerActionEvent, ctx:
   const game = ctx.gameManager.handlePlayerAction(gameId, playerId, action);
   if (!game) return;
 
-  const titanIds = Object.values(game.titans || {});
-  const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
-
   // Ensure the game object sent to clients includes ephemeral meta (if present on the server-side game object)
   const existingMeta = (game.meta ?? {}) as Partial<RoundMeta & CombatMeta>;
   const gameToSend: Game = {
@@ -101,7 +97,7 @@ export function handlePlayerAction(ws: WebSocket, event: PlayerActionEvent, ctx:
   };
 
   const gameUpdateEvent: GameEvent = {
-    payload: { game: gameToSend, titans },
+    payload: { game: gameToSend },
     type: "GameUpdate"
   };
 

@@ -74,10 +74,6 @@ function App() {
         setGame(game);
       } else if (receivedEvent.type === "GameUpdate") {
         const payload = receivedEvent.payload;
-        if (payload.titans) {
-          // Always store the full titan list from GameUpdate payloads.
-          setTitans(payload.titans);
-        }
         setGame(payload.game);
       } else if (receivedEvent.type === "lobbyUpdate") {
         setLobbyState((receivedEvent as LobbyUpdateEvent).payload);

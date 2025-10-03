@@ -8,14 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { useGameStore } from "@/hooks/useGameStore";
-import { useTitanStore } from "@/hooks/useTitanStore";
 import { GameCanvas } from "./GameCanvas";
 
 export function GameView({ ws }: { ws: WebSocket | null }) {
   const game = useGameStore(state => state.game);
   const setGame = useGameStore(state => state.setGame);
   const session = useAuthStore(state => state.session);
-  const titans = useTitanStore(state => state.titans);
   const [selectedActionType, setSelectedActionType] = useState<"Attack" | "Defend" | "Rest" | "Ability" | null>(null);
   const [selectedAbilityId, setSelectedAbilityId] = useState<string | null>(null);
 
@@ -44,11 +42,9 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
     [game, session, ws]
   );
 
-  const playerTitanId = game?.titans?.[session?.userId ?? ""] ?? undefined;
+  const playerTitan = game?.titans?.[session?.userId ?? ""];
   const opponentPlayerId = session?.userId ? (game?.players?.find(p => p !== session.userId) ?? null) : null;
-  const opponentTitanId = opponentPlayerId ? game?.titans?.[opponentPlayerId] : undefined;
-  const playerTitan = titans.find(t => t.id === playerTitanId);
-  const opponentTitan = titans.find(t => t.id === opponentTitanId);
+  const opponentTitan = opponentPlayerId ? game?.titans?.[opponentPlayerId] : undefined;
   const statsOrder = useMemo(() => ["HP", "Attack", "Defense", "Speed", "Stamina"] as const, []);
 
   // Read server-provided ephemeral charge/HP meta (may be absent) and optional round log
@@ -56,10 +52,10 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const charges: Record<string, number> = meta.titanCharges ?? {};
   const hpMeta: Record<string, number> = meta.titanHPs ?? {};
   const roundNumber = meta.roundNumber ?? 1;
-  const playerCharge = playerTitanId ? (charges[playerTitanId] ?? 0) : 0;
-  const opponentCharge = opponentTitanId ? (charges[opponentTitanId] ?? 0) : 0;
-  const playerHP = playerTitanId ? (hpMeta[playerTitanId] ?? playerTitan?.stats.HP ?? "-") : "-";
-  const opponentHP = opponentTitanId ? (hpMeta[opponentTitanId] ?? opponentTitan?.stats.HP ?? "-") : "-";
+  const playerCharge = playerTitan ? (charges[playerTitan.id] ?? 0) : 0;
+  const opponentCharge = opponentTitan ? (charges[opponentTitan.id] ?? 0) : 0;
+  const playerHP = playerTitan ? (hpMeta[playerTitan.id] ?? playerTitan.stats.HP ?? "-") : "-";
+  const opponentHP = opponentTitan ? (hpMeta[opponentTitan.id] ?? opponentTitan.stats.HP ?? "-") : "-";
 
   const lockedPlayers = meta.lockedPlayers ?? {};
   const opponentLocked = opponentPlayerId ? lockedPlayers[opponentPlayerId] : false;
@@ -69,7 +65,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const abilities = useMemo<Ability[]>(() => {
     const metaAbilitiesMap = (meta as { titanAbilities?: Record<string, Ability[]> }).titanAbilities ?? {};
     // prefer meta map first
-    let abs: Ability[] = playerTitanId ? (metaAbilitiesMap[playerTitanId] ?? []) : [];
+    let abs: Ability[] = playerTitan ? (metaAbilitiesMap[playerTitan.id] ?? []) : [];
 
     // final fallback: use titan.abilities directly
     if (!abs || abs.length === 0) {
@@ -77,7 +73,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
     }
 
     return abs;
-  }, [meta, playerTitanId, playerTitan?.abilities]);
+  }, [meta, playerTitan?.id, playerTitan?.abilities]);
 
   const sequence = meta.roundSequence || [];
 
