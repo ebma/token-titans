@@ -37,6 +37,8 @@ export type Titan = {
   id: string;
   name: string;
   ownerId: string;
+  level: number;
+  xp: number;
   stats: Record<TitanStat, number>;
   abilities: Ability[];
 };

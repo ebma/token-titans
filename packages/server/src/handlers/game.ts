@@ -95,7 +95,7 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
  */
 export function handlePlayerAction(ws: WebSocket, event: PlayerActionEvent, ctx: ServerContext) {
   const { gameId, playerId, action } = event.payload;
-  const result = ctx.gameManager.handlePlayerAction(gameId, playerId, action);
+  const result = ctx.gameManager.handlePlayerAction(gameId, playerId, action, ctx.titanManager);
   if (!result.game) return;
 
   // Ensure the game object sent to clients includes ephemeral meta (if present on the server-side game object)

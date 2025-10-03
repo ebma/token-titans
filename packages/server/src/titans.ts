@@ -89,9 +89,11 @@ export class TitanManager {
     const titan: Titan = {
       abilities: [],
       id,
+      level: 1,
       name,
       ownerId: playerId,
-      stats
+      stats,
+      xp: 0
     };
 
     // Assign up to two distinct random abilities from ABILITIES

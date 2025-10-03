@@ -1,5 +1,7 @@
 import type { Game, GameAction, RoundResult, Titan } from "@shared/index";
 import { randomUUID } from "crypto";
+import type { TitanManager } from "../titans";
+import { computeBattleXP, xpToNext } from "../xp";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
 import { resolveRound } from "./resolver";
 
@@ -133,7 +135,8 @@ export class GameManager {
   handlePlayerAction(
     gameId: string,
     playerId: string,
-    action: GameAction
+    action: GameAction,
+    titanManager: TitanManager
   ): { game?: Game; resolved: boolean; roundResult?: RoundResult } {
     const game = this.getGame(gameId);
     if (!game) {
@@ -171,9 +174,14 @@ export class GameManager {
       // Delegate resolution to resolver module which will update titanHPs/titanCharges and game.meta
       try {
         const rr = resolveRound(this, game.id);
-        if (rr) {
+        const updatedGame = this.getGame(gameId);
+        if (rr && updatedGame) {
+          // Award XP if game finished
+          if (updatedGame.gameState === "Finished") {
+            this.awardBattleXP(gameId, titanManager);
+          }
           // Return updated game object (it may have been augmented)
-          return { game: this.getGame(gameId), resolved: true, roundResult: rr };
+          return { game: updatedGame, resolved: true, roundResult: rr };
         }
       } catch (e) {
         console.error("resolveRound failed:", e);
@@ -224,5 +232,45 @@ export class GameManager {
       }
     }
     return undefined;
+  }
+
+  /**
+   * Award XP to titans after a finished game.
+   */
+  awardBattleXP(gameId: string, titanManager: TitanManager): void {
+    const game = this.getGame(gameId);
+    if (!game || game.gameState !== "Finished") return;
+
+    const hpRecord = this._getHPRecord(gameId);
+    const winner = game.players.find(p => (hpRecord[game.titans[p].id] ?? 0) > 0);
+
+    for (const playerId of game.players) {
+      const titan = game.titans[playerId];
+      if (!titan) continue;
+
+      const oppPlayerId = game.players.find(p => p !== playerId);
+      if (!oppPlayerId) continue;
+      const oppTitan = game.titans[oppPlayerId];
+      if (!oppTitan) continue;
+
+      const won = playerId === winner;
+      const defeated = (hpRecord[oppTitan.id] ?? 0) <= 0;
+
+      const xpGained = computeBattleXP(titan.level, oppTitan.level, won, defeated);
+      titan.xp += xpGained;
+
+      // Level up if possible
+      while (titan.xp >= xpToNext(titan.level)) {
+        titan.xp -= xpToNext(titan.level);
+        titan.level += 1;
+      }
+
+      // Update the main titan in TitanManager
+      const mainTitan = titanManager.titans.get(titan.id);
+      if (mainTitan) {
+        mainTitan.level = titan.level;
+        mainTitan.xp = titan.xp;
+      }
+    }
   }
 }
