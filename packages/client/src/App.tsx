@@ -22,7 +22,7 @@ function App() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const { session, setSession, clearSession } = useAuthStore();
   const setTitans = useTitanStore(state => state.setTitans);
-  const { game, setGame } = useGameStore();
+  const { game, setGame, setLastRoundResult } = useGameStore();
   const { setLobbyState } = useLobbyStore();
 
   useEffect(() => {
@@ -75,6 +75,9 @@ function App() {
       } else if (receivedEvent.type === "GameUpdate") {
         const payload = receivedEvent.payload;
         setGame(payload.game);
+      } else if (receivedEvent.type === "RoundComplete") {
+        const payload = receivedEvent.payload;
+        setLastRoundResult(payload.roundResult);
       } else if (receivedEvent.type === "lobbyUpdate") {
         setLobbyState((receivedEvent as LobbyUpdateEvent).payload);
       } else {

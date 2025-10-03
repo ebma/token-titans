@@ -1,4 +1,12 @@
-import type { GameAction, RoundAction, RoundActionKind, RoundActionResult, RoundSequence, Titan } from "@shared/index";
+import type {
+  GameAction,
+  RoundAction,
+  RoundActionKind,
+  RoundActionResult,
+  RoundResult,
+  RoundSequence,
+  Titan
+} from "@shared/index";
 import { ABILITIES } from "../abilities";
 import type { GameManager } from "./manager";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
@@ -8,7 +16,7 @@ import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
  * This function mutates the GameManager's internal HP/charge records via its
  * exposed accessor/mutator methods.
  */
-export function resolveRound(manager: GameManager, gameId: string) {
+export function resolveRound(manager: GameManager, gameId: string): RoundResult | undefined {
   const game = manager.getGame(gameId);
   if (!game) return;
 
@@ -200,18 +208,22 @@ export function resolveRound(manager: GameManager, gameId: string) {
   manager._setHPRecord(gameId, hpRecord);
   manager._setChargeRecord(gameId, chargeRecord);
 
-  const startRound = (game.meta?.roundNumber as number) ?? 1;
+  const startRound = game.roundNumber ?? 1;
   const nextRound = game.gameState === "Finished" ? startRound : startRound + 1;
+  game.roundNumber = nextRound;
 
   const titanAbilitiesMap = buildTitanAbilities(titansForGame);
   game.meta = {
-    roundLog,
-    roundNumber: nextRound,
-    roundSequence,
     titanAbilities: titanAbilitiesMap,
     titanCharges: { ...chargeRecord },
     titanHPs: { ...hpRecord }
   };
 
   manager._clearRoundActions(gameId);
+
+  return {
+    roundLog,
+    roundNumber: nextRound,
+    roundSequence
+  };
 }

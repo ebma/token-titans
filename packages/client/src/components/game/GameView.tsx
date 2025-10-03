@@ -13,6 +13,7 @@ import { GameCanvas } from "./GameCanvas";
 export function GameView({ ws }: { ws: WebSocket | null }) {
   const game = useGameStore(state => state.game);
   const setGame = useGameStore(state => state.setGame);
+  const lastRoundResult = useGameStore(state => state.lastRoundResult);
   const session = useAuthStore(state => state.session);
   const [selectedActionType, setSelectedActionType] = useState<"Attack" | "Defend" | "Rest" | "Ability" | null>(null);
   const [selectedAbilityId, setSelectedAbilityId] = useState<string | null>(null);
@@ -22,7 +23,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   useEffect(() => {
     setSelectedActionType(null);
     setSelectedAbilityId(null);
-  }, [game?.meta?.roundNumber]);
+  }, [lastRoundResult?.roundNumber]);
 
   const isWaiting = !game || !session;
 
@@ -51,7 +52,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const meta = useMemo(() => game?.meta ?? {}, [game?.meta]);
   const charges: Record<string, number> = meta.titanCharges ?? {};
   const hpMeta: Record<string, number> = meta.titanHPs ?? {};
-  const roundNumber = meta.roundNumber ?? 1;
+  const roundNumber = lastRoundResult?.roundNumber ?? 1;
   const playerCharge = playerTitan ? (charges[playerTitan.id] ?? 0) : 0;
   const opponentCharge = opponentTitan ? (charges[opponentTitan.id] ?? 0) : 0;
   const playerHP = playerTitan ? (hpMeta[playerTitan.id] ?? playerTitan.stats.HP ?? "-") : "-";
@@ -75,7 +76,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
     return abs;
   }, [meta, playerTitan]);
 
-  const sequence = meta.roundSequence || [];
+  const sequence = lastRoundResult?.roundSequence || [];
 
   // expose stat objects for safer indexing in the table
   const playerStats = useMemo<Record<string, number | string>>(() => playerTitan?.stats ?? {}, [playerTitan]);
@@ -223,10 +224,10 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         </CardHeader>
         <CardContent>
           <div>
-            {meta.roundLog?.length === 0 ? (
+            {lastRoundResult?.roundLog?.length === 0 ? (
               <div>No events yet.</div>
             ) : (
-              meta.roundLog?.map((msg, idx) => (
+              lastRoundResult?.roundLog?.map((msg, idx) => (
                 <div className="text-sm leading-6" key={idx}>
                   {msg}
                 </div>
@@ -236,7 +237,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
         </CardContent>
       </Card>
     ),
-    [meta.roundLog]
+    [lastRoundResult?.roundLog]
   );
 
   if (isWaiting) {

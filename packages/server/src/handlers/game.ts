@@ -1,4 +1,13 @@
-import type { CreateGameRequestEvent, Game, GameEvent, GameStartEvent, Player, PlayerActionEvent, Titan } from "@shared/index";
+import type {
+  CreateGameRequestEvent,
+  Game,
+  GameEvent,
+  GameStartEvent,
+  Player,
+  PlayerActionEvent,
+  RoundResult,
+  Titan
+} from "@shared/index";
 import { WebSocket } from "ws";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "../game";
 import { ServerContext } from "../serverContext";
@@ -82,26 +91,39 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
 }
 
 /**
- * Handle playerAction: forward to GameManager and broadcast GameUpdate to players.
+ * Handle playerAction: forward to GameManager and broadcast GameUpdate or RoundComplete to players.
  */
 export function handlePlayerAction(ws: WebSocket, event: PlayerActionEvent, ctx: ServerContext) {
   const { gameId, playerId, action } = event.payload;
-  const game = ctx.gameManager.handlePlayerAction(gameId, playerId, action);
-  if (!game) return;
+  const result = ctx.gameManager.handlePlayerAction(gameId, playerId, action);
+  if (!result.game) return;
 
   // Ensure the game object sent to clients includes ephemeral meta (if present on the server-side game object)
-  const existingMeta = (game.meta ?? {}) as Partial<RoundMeta & CombatMeta>;
+  const existingMeta = (result.game.meta ?? {}) as Partial<RoundMeta & CombatMeta>;
   const gameToSend: Game = {
-    ...game,
+    ...result.game,
     ...(Object.keys(existingMeta).length ? { meta: existingMeta } : {})
   };
 
+  // Always broadcast GameUpdate
   const gameUpdateEvent: GameEvent = {
     payload: { game: gameToSend },
     type: "GameUpdate"
   };
 
-  game.players.forEach(pId => {
+  result.game.players.forEach(pId => {
     ctx.sendToUser(pId, gameUpdateEvent);
   });
+
+  // If resolved and roundResult present, broadcast RoundComplete
+  if (result.resolved && result.roundResult) {
+    const roundCompleteEvent: GameEvent = {
+      payload: { roundResult: result.roundResult },
+      type: "RoundComplete"
+    };
+
+    result.game.players.forEach(pId => {
+      ctx.sendToUser(pId, roundCompleteEvent);
+    });
+  }
 }

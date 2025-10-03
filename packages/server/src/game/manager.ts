@@ -1,4 +1,4 @@
-import type { Game, GameAction, Titan } from "@shared/index";
+import type { Game, GameAction, RoundResult, Titan } from "@shared/index";
 import { randomUUID } from "crypto";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
 import { resolveRound } from "./resolver";
@@ -51,6 +51,7 @@ export class GameManager {
       gameState: "PreBattle",
       id: randomUUID(),
       players: players.map(p => p.id),
+      roundNumber: 1,
       titans: titansMapping
     };
 
@@ -75,12 +76,11 @@ export class GameManager {
 
     game.meta = {
       lockedPlayers: {},
-      roundLog: [],
-      roundNumber: 1,
       titanAbilities: titanAbilitiesMap,
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
     };
+    game.roundNumber = 1;
 
     this.games.set(game.id, game);
     return game;
@@ -112,8 +112,6 @@ export class GameManager {
 
     game.meta = {
       lockedPlayers: {},
-      roundLog: [],
-      roundNumber: 1,
       titanAbilities: titanAbilitiesMap,
       titanCharges: { ...titanChargeRecord },
       titanHPs: { ...titanHPRecord }
@@ -132,14 +130,18 @@ export class GameManager {
    * - store action for the round; when both players acted, trigger resolveRound (delegated)
    * - Ability cost validation is handled in resolver.ts where ability data is available
    */
-  handlePlayerAction(gameId: string, playerId: string, action: GameAction): Game | undefined {
+  handlePlayerAction(
+    gameId: string,
+    playerId: string,
+    action: GameAction
+  ): { game?: Game; resolved: boolean; roundResult?: RoundResult } {
     const game = this.getGame(gameId);
     if (!game) {
-      return;
+      return { resolved: false };
     }
 
     if (!game.players.includes(playerId)) {
-      return game;
+      return { game, resolved: false };
     }
 
     console.log(`Player ${playerId} in game ${gameId} used action: ${action.type}`);
@@ -147,7 +149,7 @@ export class GameManager {
     // Ensure per-game data exists
     if (!this.titanCharges.has(gameId) || !this.titanHPs.has(gameId)) {
       // No per-game meta initialized; nothing to process
-      return game;
+      return { game, resolved: false };
     }
 
     // Ability cost validation is handled in resolver.ts where ability data is available
@@ -168,14 +170,19 @@ export class GameManager {
     if (allPlayersActed) {
       // Delegate resolution to resolver module which will update titanHPs/titanCharges and game.meta
       try {
-        resolveRound(this, game.id);
+        const rr = resolveRound(this, game.id);
+        if (rr) {
+          // Return updated game object (it may have been augmented)
+          return { game: this.getGame(gameId), resolved: true, roundResult: rr };
+        }
       } catch (e) {
         console.error("resolveRound failed:", e);
       }
+      return { game: this.getGame(gameId), resolved: false };
     }
 
     // Return updated game object (it may have been augmented)
-    return this.getGame(gameId);
+    return { game: this.getGame(gameId), resolved: false };
   }
 
   // Expose some internal records for the resolver (careful; internal API)

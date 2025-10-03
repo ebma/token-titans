@@ -31,13 +31,16 @@ export type GameState = "Lobby" | "PreBattle" | "Battle" | "Finished";
 
 export type GameMode = "1v1" | "2v2";
 
+export type RoundResult = {
+  roundSequence: RoundSequence;
+  roundLog: string[];
+  roundNumber: number;
+};
+
 export type Game = {
   meta?: Partial<{
-    roundLog: string[];
-    roundNumber: number;
     lockedPlayers: Record<string, boolean>;
     lockedActions: Record<string, string>;
-    roundSequence?: RoundSequence;
     titanCharges: { [p: string]: number };
     titanHPs: { [p: string]: number };
     titanAbilities: Record<string, Ability[]>;
@@ -47,6 +50,7 @@ export type Game = {
   titans: Record<string, Titan>; // PlayerID to Titan
   gameState: GameState;
   gameMode: GameMode;
+  roundNumber: number;
 };
 
 export type GameAction =
@@ -124,6 +128,7 @@ export type PlayerActionEvent = {
 export type GameEvent =
   | { type: "GameStart"; payload: { game: Game } }
   | { type: "GameUpdate"; payload: { game: Game } }
+  | { type: "RoundComplete"; payload: { roundResult: RoundResult } }
   | { type: "ActionRequest"; payload: { playerId: string } }
   | { type: "ActionResponse"; payload: { playerId: string; action: GameAction } };
 
