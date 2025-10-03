@@ -19,10 +19,11 @@
     "client": "bun --cwd packages/client run dev",
     "dev": "concurrently -n 'backend,frontend' -c 'bgBlue.bold,bgGreen.bold' 'cd packages/server && bun run dev' 'cd packages/client && bun run dev'",
     "format": "biome check --write --unsafe --no-errors-on-unmatched",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint --write .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "prepare": "husky",
-    "server": "bun --cwd packages/server run dev"
+    "server": "bun --cwd packages/server run dev",
+    "typecheck": "bun x tsc --build"
   },
   "verify": "biome check --no-errors-on-unmatched",
   "workspaces": [
