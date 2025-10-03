@@ -86,12 +86,48 @@ export function resolveRound(manager: GameManager, gameId: string): RoundResult 
     };
 
     if (act.type === "Attack") {
+      const attackerAccuracy = attackerTitan?.stats.Accuracy ?? 0;
+      const defenderEvasion = defenderTitan?.stats.Evasion ?? 0;
+      const baseHit = 0.8;
+      const delta = (attackerAccuracy - defenderEvasion) / 100;
+      const hitProb = Math.max(0.05, Math.min(0.95, baseHit + delta));
+      const hitRoll = Math.random();
+      const isHit = hitRoll <= hitProb;
+
+      if (!isHit) {
+        const damage = 0;
+        roundAction.result = "Miss";
+        roundLog.push(
+          `${defenderTitan?.name ?? defenderTitanId} evades the attack by ${attackerTitan?.name ?? attackerTitanId}.`
+        );
+
+        if (defenderAction?.type === "Defend") {
+          chargeRecord[defenderTitanId] = Math.min(100, Math.round((chargeRecord[defenderTitanId] ?? 0) + 20));
+          roundLog.push(
+            `${defenderTitan?.name ?? defenderTitanId} defended and charges special by +20 (now ${chargeRecord[defenderTitanId]}%).`
+          );
+        }
+
+        roundSequence.push(roundAction);
+        continue;
+      }
+
+      // Hit
+      const critChance = attackerTitan?.stats.CriticalChance ?? 0;
+      const isCrit = Math.random() < critChance / 100;
+      if (isCrit) {
+        roundLog.push(`${attackerTitan?.name ?? attackerTitanId} lands a critical hit!`);
+      }
+
       const rand = Math.random();
       const attackValue = (attackerTitan?.stats.Attack ?? 0) * (1 + rand);
       const defenderBaseDef = defenderTitan?.stats.Defense ?? 0;
       const defMultiplier = defenderAction?.type === "Defend" ? 1.5 + Math.random() * 0.5 : 1;
       const effectiveDef = defenderBaseDef * defMultiplier;
-      const damageRaw = Math.max(0, attackValue - effectiveDef);
+      let damageRaw = Math.max(0, attackValue - effectiveDef);
+      if (isCrit) {
+        damageRaw *= 1.5;
+      }
 
       let damage = Math.round(damageRaw);
       const shieldAmt = shields[defenderTitanId] ?? 0;
@@ -159,11 +195,46 @@ export function resolveRound(manager: GameManager, gameId: string): RoundResult 
 
       chargeRecord[attackerTitanId] = Math.max(0, Math.round((chargeRecord[attackerTitanId] ?? 0) - cost));
 
+      const DAMAGE_ABILITIES = new Set(["drain", "focused_strike", "overdrive", "shock"]);
+      let modifiedAttackerTitan = attackerTitan;
       let abilitySuccess = true;
+
+      if (DAMAGE_ABILITIES.has(abilityId)) {
+        const attackerAccuracy = attackerTitan?.stats.Accuracy ?? 0;
+        const defenderEvasion = defenderTitan?.stats.Evasion ?? 0;
+        const baseHit = 0.8;
+        const delta = (attackerAccuracy - defenderEvasion) / 100;
+        const hitProb = Math.max(0.05, Math.min(0.95, baseHit + delta));
+        const hitRoll = Math.random();
+        const isHit = hitRoll <= hitProb;
+
+        if (!isHit) {
+          roundLog.push(
+            `${defenderTitan?.name ?? defenderTitanId} evades ${attackerTitan?.name ?? attackerTitanId}'s ${ability.name}.`
+          );
+          roundAction.result = "Miss";
+          roundSequence.push(roundAction);
+          continue;
+        }
+
+        // Hit
+        const critChance = attackerTitan?.stats.CriticalChance ?? 0;
+        const isCrit = Math.random() < critChance / 100;
+        if (isCrit) {
+          roundLog.push(`${attackerTitan?.name ?? attackerTitanId} lands a critical hit!`);
+          if (["drain", "focused_strike", "overdrive"].includes(abilityId)) {
+            modifiedAttackerTitan = {
+              ...attackerTitan,
+              stats: { ...attackerTitan.stats, Attack: (attackerTitan.stats.Attack ?? 0) * 1.5 }
+            };
+          }
+        }
+      }
+
       try {
         ability.apply({
           attackerId: attackerTitanId,
-          attackerTitan,
+          attackerTitan: modifiedAttackerTitan,
           chargeRecord,
           defenderId: defenderTitanId,
           defenderTitan,
