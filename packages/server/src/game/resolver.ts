@@ -157,6 +157,16 @@ export function resolveRound(manager: GameManager, gameId: string): RoundResult 
         )} -> ${afterHP}).`
       );
 
+      if (damage > 0) {
+        const baseAttackGain = 10;
+        const stamina = attackerTitan?.stats.Stamina ?? 0;
+        const effectiveGain = Math.min(100, Math.round(baseAttackGain * (1 + stamina / 100)));
+        chargeRecord[attackerTitanId] = Math.min(100, Math.round((chargeRecord[attackerTitanId] ?? 0) + effectiveGain));
+        roundLog.push(
+          `${attackerTitan?.name ?? attackerTitanId} gains +${effectiveGain} charge from attacking (now ${chargeRecord[attackerTitanId]}%).`
+        );
+      }
+
       if (afterHP <= 0) {
         game.gameState = "Finished";
         roundLog.push(`${defenderTitan?.name ?? defenderTitanId} is defeated — ${defender} wins.`);
