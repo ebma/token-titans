@@ -1,7 +1,8 @@
 import type { Game, GameAction, RoundResult, Titan } from "@shared/index";
+import { TITAN_STATS_ORDER } from "@shared/index";
 import { randomUUID } from "crypto";
 import type { TitanManager } from "../titans";
-import { computeBattleXP, xpToNext } from "../xp";
+import { computeBattleXP, getStatIncrease, xpToNext } from "../xp";
 import { buildTitanAbilities, CombatMeta, RoundMeta } from "./meta";
 import { resolveRound } from "./resolver";
 
@@ -263,6 +264,10 @@ export class GameManager {
       while (titan.xp >= xpToNext(titan.level)) {
         titan.xp -= xpToNext(titan.level);
         titan.level += 1;
+        // Increase stats on level up
+        for (const stat of TITAN_STATS_ORDER) {
+          titan.stats[stat] += getStatIncrease();
+        }
       }
 
       // Update the main titan in TitanManager
@@ -270,6 +275,7 @@ export class GameManager {
       if (mainTitan) {
         mainTitan.level = titan.level;
         mainTitan.xp = titan.xp;
+        mainTitan.stats = { ...titan.stats };
       }
     }
   }
