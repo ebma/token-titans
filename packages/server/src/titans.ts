@@ -27,7 +27,7 @@ export class TitanManager {
     const stats: Record<TitanStat, number> = {
       Attack: randomInt(5, 10),
       Defense: randomInt(5, 10),
-      HP: randomInt(20, 50),
+      HP: randomInt(20, 30),
       Speed: randomInt(5, 10),
       Stamina: randomInt(5, 10)
     };
@@ -40,19 +40,21 @@ export class TitanManager {
       stats
     };
 
-    // Assign a random ability from ABILITIES
+    // Assign up to two distinct random abilities from ABILITIES
     const abilityIds = Object.keys(ABILITIES);
-    if (abilityIds.length > 0) {
-      const choice = abilityIds[Math.floor(Math.random() * abilityIds.length)];
-      const ability = ABILITIES[choice];
-      titan.abilities = [
-        {
+    const numToAssign = Math.min(2, abilityIds.length);
+    if (numToAssign > 0) {
+      const shuffled = [...abilityIds].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, numToAssign);
+      titan.abilities = selected.map(id => {
+        const ability = ABILITIES[id];
+        return {
           cost: ability.cost,
           description: ability.description,
           id: ability.id,
           name: ability.name
-        }
-      ];
+        };
+      });
     }
 
     this.titans.set(id, titan);
