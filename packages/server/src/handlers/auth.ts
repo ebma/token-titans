@@ -74,8 +74,7 @@ export function handleReconnectRequest(ws: WebSocket, event: ReconnectRequestEve
     // Check if user is in a game and send game state
     const game = ctx.gameManager.getGameByPlayerId(userId);
     if (game) {
-      const titanIds = Object.values(game.titans || {}) as string[];
-      const titans: Titan[] = titanIds.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
+      const titans = Object.values(game.titans || {});
       const gameStartEvent: GameStartEvent = {
         payload: { game, titans },
         type: "gameStart"

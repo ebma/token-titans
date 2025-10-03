@@ -17,8 +17,7 @@ export function resolveRound(manager: GameManager, gameId: string) {
   const hpRecord = { ...(manager._getHPRecord(gameId) ?? {}) };
   const chargeRecord = { ...(manager._getChargeRecord(gameId) ?? {}) };
 
-  const getTitanId = (playerId: string) => game.titans[playerId];
-  const getTitanObj = (titanId: string) => titansForGame[titanId];
+  const getTitan = (playerId: string) => game.titans[playerId];
 
   const roundLog: string[] = [];
   const roundSequence: RoundAction[] = [];
@@ -28,26 +27,24 @@ export function resolveRound(manager: GameManager, gameId: string) {
   // Log choices
   for (const player of game.players) {
     const act = actions[player];
-    const titanId = getTitanId(player);
-    const titanObj = getTitanObj(titanId);
+    const titan = getTitan(player);
     if (act) {
-      roundLog.push(`${titanObj?.name ?? titanId} chooses to ${act.type === "Ability" ? "Ability" : act.type}.`);
+      roundLog.push(`${titan?.name ?? "Unknown"} chooses to ${act.type === "Ability" ? "Ability" : act.type}.`);
     }
   }
 
   // Ensure hp/charge entries exist
   for (const p of game.players) {
-    const tid = getTitanId(p);
-    const t = getTitanObj(tid);
-    if (!(tid in hpRecord)) hpRecord[tid] = t?.stats.HP ?? 0;
+    const titan = getTitan(p);
+    const tid = titan?.id ?? "";
+    if (!(tid in hpRecord)) hpRecord[tid] = titan?.stats.HP ?? 0;
     if (!(tid in chargeRecord)) chargeRecord[tid] = 0;
   }
 
   // Speed rolls
   const speedRolls: Record<string, number> = {};
   for (const player of game.players) {
-    const tid = getTitanId(player);
-    const titan = getTitanObj(tid);
+    const titan = getTitan(player);
     speedRolls[player] = (titan?.stats.Speed ?? 0) * Math.random();
   }
   const order = [...game.players].sort((a, b) => speedRolls[b] - speedRolls[a]);
@@ -60,10 +57,10 @@ export function resolveRound(manager: GameManager, gameId: string) {
 
     const defender = game.players.find(p => p !== attacker);
     if (!defender) continue;
-    const attackerTitanId = getTitanId(attacker);
-    const defenderTitanId = getTitanId(defender);
-    const attackerTitan = getTitanObj(attackerTitanId);
-    const defenderTitan = getTitanObj(defenderTitanId);
+    const attackerTitan = getTitan(attacker);
+    const defenderTitan = getTitan(defender);
+    const attackerTitanId = attackerTitan?.id ?? "";
+    const defenderTitanId = defenderTitan?.id ?? "";
     const defenderAction = actions[defender];
 
     if (!(attackerTitanId in hpRecord)) hpRecord[attackerTitanId] = attackerTitan?.stats.HP ?? 0;

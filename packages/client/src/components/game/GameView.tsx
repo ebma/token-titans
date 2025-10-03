@@ -73,7 +73,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
     }
 
     return abs;
-  }, [meta, playerTitan?.id, playerTitan?.abilities]);
+  }, [meta, playerTitan]);
 
   const sequence = meta.roundSequence || [];
 

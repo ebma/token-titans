@@ -19,7 +19,7 @@ export const AnimatedTitan = forwardRef<TitanHandle, AnimatedTitanProps>(({ colo
   const meshRef = useRef<THREE.Mesh>(null);
 
   useImperativeHandle(ref, () => ({
-    abilityPulse: (durationMs: number = 300) => {
+    abilityPulse: (durationMs = 300) => {
       return new Promise<void>(resolve => {
         if (!meshRef.current) return resolve();
         const startScale = meshRef.current.scale.clone();
@@ -47,7 +47,7 @@ export const AnimatedTitan = forwardRef<TitanHandle, AnimatedTitanProps>(({ colo
       });
     },
 
-    defend: (durationMs: number = 400) => {
+    defend: (durationMs = 400) => {
       return new Promise<void>(resolve => {
         if (!meshRef.current) return resolve();
         const startRot = meshRef.current.rotation.z;
@@ -86,7 +86,7 @@ export const AnimatedTitan = forwardRef<TitanHandle, AnimatedTitanProps>(({ colo
     },
 
     getPosition: () => meshRef.current?.position.clone() || new THREE.Vector3(),
-    lungeToPoint: (point: THREE.Vector3, durationMs: number = 250) => {
+    lungeToPoint: (point: THREE.Vector3, durationMs = 250) => {
       return new Promise<void>(resolve => {
         if (!meshRef.current) return resolve();
         const startPos = meshRef.current.position.clone();
@@ -119,7 +119,7 @@ export const AnimatedTitan = forwardRef<TitanHandle, AnimatedTitanProps>(({ colo
       });
     },
 
-    rest: (durationMs: number = 500) => {
+    rest: (durationMs = 500) => {
       return new Promise<void>(resolve => {
         if (!meshRef.current) return resolve();
         const startScale = meshRef.current.scale.clone();

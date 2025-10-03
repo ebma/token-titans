@@ -14,27 +14,27 @@ export function handleCreateGameRequest(ws: WebSocket, event: CreateGameRequestE
     return;
   }
 
-  // Build mapping playerId -> titanId:
+  // Build mapping playerId -> Titan:
   // 1) Prefer GameManager's tracked active titan if present
   // 2) Otherwise fall back to TitanManager's first titan for the player (if any)
-  const activeTitansForRequest: Record<string, string> = {};
+  const activeTitansForRequest: Record<string, Titan> = {};
   for (const pid of playerIds) {
-    const active = ctx.gameManager.getActiveTitan(pid); // use GameManager's API
-    if (active) {
-      activeTitansForRequest[pid] = active;
+    const activeId = ctx.gameManager.getActiveTitan(pid); // use GameManager's API
+    let titan: Titan | undefined;
+    if (activeId) {
+      titan = ctx.titanManager.titans.get(activeId);
     } else {
       const playerTitans = ctx.titanManager.getTitansForPlayer(pid);
       if (playerTitans.length > 0) {
-        activeTitansForRequest[pid] = playerTitans[0].id; // fallback to first titan
+        titan = playerTitans[0];
       }
+    }
+    if (titan) {
+      activeTitansForRequest[pid] = titan;
     }
   }
 
-  // Build Titan objects array for the selected titan ids so GameManager can initialize HP/charge
-  const titanIdsPre = Object.values(activeTitansForRequest || {});
-  const titansForGame: Titan[] = titanIdsPre.map(id => ctx.titanManager.titans.get(id)).filter(Boolean) as Titan[];
-
-  const game = ctx.gameManager.createGame(gamePlayers, activeTitansForRequest, titansForGame);
+  const game = ctx.gameManager.createGame(gamePlayers, activeTitansForRequest);
 
   const titans = Object.values(game.titans || {});
 

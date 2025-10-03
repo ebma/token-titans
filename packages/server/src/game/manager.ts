@@ -42,13 +42,10 @@ export class GameManager {
 
   /**
    * Create a new game.
-   * Optionally accept a list of Titan objects for the titans participating in the game
+   * Accepts a mapping of playerId to Titan objects for the titans participating in the game
    * so that per-game HP and charge can be initialized from Titan.stats.HP.
    */
-  createGame(players: { id: string; username: string }[], activeTitans?: Record<string, string>, titans?: Titan[]): Game {
-    // Use provided mapping when available, otherwise use stored active titans for these players
-    const titansMapping = activeTitans ?? this.getActiveTitansForPlayers(players.map(p => p.id));
-
+  createGame(players: { id: string; username: string }[], titansMapping: Record<string, Titan>): Game {
     const game: Game = {
       gameMode: "1v1",
       gameState: "PreBattle",
@@ -57,23 +54,15 @@ export class GameManager {
       titans: titansMapping
     };
 
-    // Initialize per-game titan data if Titan objects were provided
+    // Initialize per-game titan data from the provided Titan objects
     const titanHPRecord: Record<string, number> = {};
     const titanChargeRecord: Record<string, number> = {};
     const titanRecord: Record<string, Titan> = {};
 
-    if (titans && titans.length > 0) {
-      for (const t of titans) {
-        titanHPRecord[t.id] = t.stats.HP;
-        titanChargeRecord[t.id] = 0;
-        titanRecord[t.id] = t;
-      }
-    } else {
-      // If no titan objects provided, default to 0/empty; handler may call initGameMeta later.
-      for (const tid of Object.values(game.titans || {})) {
-        titanHPRecord[tid] = 0;
-        titanChargeRecord[tid] = 0;
-      }
+    for (const t of Object.values(titansMapping)) {
+      titanHPRecord[t.id] = t.stats.HP;
+      titanChargeRecord[t.id] = 0;
+      titanRecord[t.id] = t;
     }
 
     this.titanHPs.set(game.id, titanHPRecord);
