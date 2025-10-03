@@ -1,4 +1,5 @@
 import type { Ability, GameAction, PlayerActionEvent } from "@shared/index";
+import { TITAN_STATS_ORDER } from "@shared/index";
 import { ArrowLeft, Hourglass } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge.tsx";
@@ -46,7 +47,7 @@ export function GameView({ ws }: { ws: WebSocket | null }) {
   const playerTitan = game?.titans?.[session?.userId ?? ""];
   const opponentPlayerId = session?.userId ? (game?.players?.find(p => p !== session.userId) ?? null) : null;
   const opponentTitan = opponentPlayerId ? game?.titans?.[opponentPlayerId] : undefined;
-  const statsOrder = useMemo(() => ["HP", "Attack", "Defense", "Speed", "Stamina"] as const, []);
+  const statsOrder = TITAN_STATS_ORDER;
 
   // Read server-provided ephemeral charge/HP meta (may be absent) and optional round log
   const meta = useMemo(() => game?.meta ?? {}, [game?.meta]);

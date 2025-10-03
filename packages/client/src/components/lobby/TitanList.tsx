@@ -1,6 +1,7 @@
 // TitanList.tsx
 
 import type { Titan } from "@shared/index.ts";
+import { TITAN_STATS_ORDER } from "@shared/index.ts";
 import React from "react";
 import { Card } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
@@ -31,10 +32,10 @@ export const TitanList: React.FC<TitanListProps> = ({ titans }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Object.entries(titan.stats).map(([stat, value]) => (
+              {TITAN_STATS_ORDER.filter(stat => stat in titan.stats).map(stat => (
                 <TableRow key={stat}>
                   <TableCell>{stat}</TableCell>
-                  <TableCell>{String(value)}</TableCell>
+                  <TableCell>{String(titan.stats[stat])}</TableCell>
                 </TableRow>
               ))}
               <TableRow>

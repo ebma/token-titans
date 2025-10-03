@@ -13,6 +13,17 @@ export type Room = {
 
 export type TitanStat = "HP" | "Attack" | "Defense" | "Speed" | "Stamina" | "Evasion" | "Accuracy" | "CriticalChance";
 
+export const TITAN_STATS_ORDER: readonly TitanStat[] = [
+  "HP",
+  "Attack",
+  "Defense",
+  "Speed",
+  "Stamina",
+  "Evasion",
+  "Accuracy",
+  "CriticalChance"
+];
+
 export type Ability = {
   id: string;
   name: string;
