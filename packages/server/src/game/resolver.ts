@@ -195,11 +195,10 @@ export function resolveRound(manager: GameManager, gameId: string): RoundResult 
 
       chargeRecord[attackerTitanId] = Math.max(0, Math.round((chargeRecord[attackerTitanId] ?? 0) - cost));
 
-      const DAMAGE_ABILITIES = new Set(["drain", "focused_strike", "overdrive", "shock"]);
       let modifiedAttackerTitan = attackerTitan;
       let abilitySuccess = true;
 
-      if (DAMAGE_ABILITIES.has(abilityId)) {
+      if (ability.isDamageAbility) {
         const attackerAccuracy = attackerTitan?.stats.Accuracy ?? 0;
         const defenderEvasion = defenderTitan?.stats.Evasion ?? 0;
         const baseHit = 0.8;
@@ -222,7 +221,7 @@ export function resolveRound(manager: GameManager, gameId: string): RoundResult 
         const isCrit = Math.random() < critChance / 100;
         if (isCrit) {
           roundLog.push(`${attackerTitan?.name ?? attackerTitanId} lands a critical hit!`);
-          if (["drain", "focused_strike", "overdrive"].includes(abilityId)) {
+          if (ability.scalesWithAttack) {
             modifiedAttackerTitan = {
               ...attackerTitan,
               stats: { ...attackerTitan.stats, Attack: (attackerTitan.stats.Attack ?? 0) * 1.5 }

@@ -106,7 +106,9 @@ export class TitanManager {
           cost: ability.cost,
           description: ability.description,
           id: ability.id,
-          name: ability.name
+          isDamageAbility: ability.isDamageAbility,
+          name: ability.name,
+          scalesWithAttack: ability.scalesWithAttack
         };
       });
     }

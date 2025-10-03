@@ -1,4 +1,4 @@
-import type { Titan } from "@shared/index";
+import type { Ability, Titan } from "@shared/index";
 
 /**
  * Minimal ability system.
@@ -18,11 +18,7 @@ import type { Titan } from "@shared/index";
  */
 export const ABILITIES: Record<
   string,
-  {
-    id: string;
-    name: string;
-    cost: number;
-    description: string;
+  Ability & {
     apply: (ctx: {
       attackerId: string;
       defenderId: string;
@@ -63,7 +59,9 @@ export const ABILITIES: Record<
     cost: 35,
     description: "Deal Attack * 0.75 damage and heal caster by same amount.",
     id: "drain",
-    name: "Drain"
+    isDamageAbility: true,
+    name: "Drain",
+    scalesWithAttack: true
   },
 
   focused_strike: {
@@ -89,7 +87,9 @@ export const ABILITIES: Record<
     cost: 25,
     description: "Deal Attack * 1.5 damage.",
     id: "focused_strike",
-    name: "Focused Strike"
+    isDamageAbility: true,
+    name: "Focused Strike",
+    scalesWithAttack: true
   },
 
   fortify: {
@@ -108,7 +108,9 @@ export const ABILITIES: Record<
     cost: 20,
     description: "Heal 10 and add +10 temporary defense for this round (implemented as small shield).",
     id: "fortify",
-    name: "Fortify"
+    isDamageAbility: false,
+    name: "Fortify",
+    scalesWithAttack: false
   },
 
   heal_big: {
@@ -125,7 +127,9 @@ export const ABILITIES: Record<
     cost: 40,
     description: "Heal self 50 HP.",
     id: "heal_big",
-    name: "Vital Surge"
+    isDamageAbility: false,
+    name: "Vital Surge",
+    scalesWithAttack: false
   },
   heal_small: {
     apply: ({ attackerId, attackerTitan, hpRecord, roundLog }) => {
@@ -141,7 +145,9 @@ export const ABILITIES: Record<
     cost: 20,
     description: "Heal self 25 HP.",
     id: "heal_small",
-    name: "Cleansing Light"
+    isDamageAbility: false,
+    name: "Cleansing Light",
+    scalesWithAttack: false
   },
 
   overdrive: {
@@ -165,7 +171,9 @@ export const ABILITIES: Record<
     cost: 50,
     description: "Deal Attack * 2.5 damage.",
     id: "overdrive",
-    name: "Overdrive"
+    isDamageAbility: true,
+    name: "Overdrive",
+    scalesWithAttack: true
   },
 
   quick_charge: {
@@ -183,7 +191,9 @@ export const ABILITIES: Record<
     cost: 5,
     description: "Add +40 charge to caster (capped 100).",
     id: "quick_charge",
-    name: "Quick Charge"
+    isDamageAbility: false,
+    name: "Quick Charge",
+    scalesWithAttack: false
   },
 
   shield: {
@@ -198,7 +208,9 @@ export const ABILITIES: Record<
     cost: 30,
     description: "Create a shield that absorbs 30 damage for this round.",
     id: "shield",
-    name: "Barrier"
+    isDamageAbility: false,
+    name: "Barrier",
+    scalesWithAttack: false
   },
 
   shock: {
@@ -223,7 +235,9 @@ export const ABILITIES: Record<
     cost: 30,
     description: "Deal 10 fixed damage and reduce opponent Speed by 25% for this round.",
     id: "shock",
-    name: "Shock"
+    isDamageAbility: true,
+    name: "Shock",
+    scalesWithAttack: false
   },
 
   weaken: {
@@ -235,6 +249,8 @@ export const ABILITIES: Record<
     cost: 25,
     description: "Reduce opponent defense by 20% for this round (applies to this ability's damage calculation).",
     id: "weaken",
-    name: "Weaken"
+    isDamageAbility: false,
+    name: "Weaken",
+    scalesWithAttack: false
   }
 };

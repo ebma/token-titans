@@ -18,6 +18,8 @@ export type Ability = {
   name: string;
   cost: number;
   description?: string;
+  isDamageAbility: boolean;
+  scalesWithAttack: boolean;
 };
 
 export type Titan = {

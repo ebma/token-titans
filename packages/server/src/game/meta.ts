@@ -35,7 +35,9 @@ export function buildTitanAbilities(titanRecord: Record<string, Titan>): Record<
         cost: ability.cost,
         description: ability.description,
         id: ability.id,
-        name: ability.name
+        isDamageAbility: ability.isDamageAbility,
+        name: ability.name,
+        scalesWithAttack: ability.scalesWithAttack
       }));
     }
   }
