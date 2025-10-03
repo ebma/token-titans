@@ -2,13 +2,13 @@
  * XP and leveling system for Titans.
  */
 
+import { xpToNext as sharedXpToNext } from "@shared/index";
+
 /**
  * Calculate XP required to reach the next level.
  * Formula: floor(100 * 1.15^(level-1))
  */
-export function xpToNext(level: number): number {
-  return Math.floor(100 * Math.pow(1.15, level - 1));
-}
+export const xpToNext = sharedXpToNext;
 
 /**
  * Compute XP awarded after a battle.

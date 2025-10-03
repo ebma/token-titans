@@ -1,7 +1,7 @@
 // TitanList.tsx
 
 import type { Titan } from "@shared/index.ts";
-import { TITAN_STATS_ORDER } from "@shared/index.ts";
+import { TITAN_STATS_ORDER, xpToNext } from "@shared/index.ts";
 import React from "react";
 import { Card } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
@@ -32,6 +32,16 @@ export const TitanList: React.FC<TitanListProps> = ({ titans }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
+              <TableRow>
+                <TableCell>Level</TableCell>
+                <TableCell>{titan.level}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>XP</TableCell>
+                <TableCell>
+                  {titan.xp} / {xpToNext(titan.level)}
+                </TableCell>
+              </TableRow>
               {TITAN_STATS_ORDER.filter(stat => stat in titan.stats).map(stat => (
                 <TableRow key={stat}>
                   <TableCell>{stat}</TableCell>

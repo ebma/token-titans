@@ -24,6 +24,14 @@ export const TITAN_STATS_ORDER: readonly TitanStat[] = [
   "CriticalChance"
 ];
 
+/**
+ * Calculate XP required to reach the next level.
+ * Formula: floor(100 * 1.15^(level-1))
+ */
+export function xpToNext(level: number): number {
+  return Math.floor(100 * Math.pow(1.15, level - 1));
+}
+
 export type Ability = {
   id: string;
   name: string;
