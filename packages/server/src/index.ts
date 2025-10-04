@@ -7,9 +7,14 @@ const port = Number.parseInt(process.env.PORT || "4000", 10);
 
 // Create HTTP server
 const server = http.createServer((req, res) => {
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
   if (req.method === "GET") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: 200 }));
+    res.end(JSON.stringify({ message: "Server is running", status: 200 }));
   } else {
     res.writeHead(404);
     res.end();

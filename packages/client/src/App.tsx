@@ -20,7 +20,7 @@ function App() {
       if (serverOnline) {
         return <LoginForm ws={ws} />;
       } else {
-        return <div>Server is starting; retrying connection...</div>;
+        return <div>Server is currently offline. Retrying connection...</div>;
       }
     }
 
